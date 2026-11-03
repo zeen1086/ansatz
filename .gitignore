@@ -1,0 +1,16 @@
+*.bin
+*.npy
+*.npz
+*.wfc
+*.wfc*
+*.o
+*.mod
+*.x
+a.out
+__pycache__/
+*.pyc
+.DS_Store
+data/
+runs/
+tmp/
+log/
