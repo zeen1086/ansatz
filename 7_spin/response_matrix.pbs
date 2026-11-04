@@ -1,0 +1,14 @@
+#!/bin/bash
+#PBS -j oe
+#PBS -V
+#PBS -r n
+set -euo pipefail
+ulimit -s unlimited
+export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONDONTWRITEBYTECODE=1
+set -euo pipefail
+cd "${PBS_O_WORKDIR:?Submit from the repository root}"
+if [[ "$RESPONSE_ACTION" == endpoint ]]; then
+    "${PYTHON:-python3}" -u 7_spin/response_matrix.py endpoint "$RESPONSE_INDEX"
+else
+    "${PYTHON:-python3}" -u 7_spin/response_matrix.py "$RESPONSE_ACTION"
+fi

@@ -1,8 +1,0 @@
-{
-  "run_class": "CONDITIONAL_THREE_CELL_FULL14_EXCHANGE_WITH_LUO_LITERATURE_ANISOTROPY",
-  "j_source_file": "../data/current14/three_cell_response/J123.json",
-  "spin_S": 1.5,
-  "A_meV": 0.3627,
-  "anisotropy_source": "Luo 2025 literature value; not extracted from current full14",
-  "dispersion": "fixed_zero_temperature"
-}
