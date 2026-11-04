@@ -49,3 +49,8 @@ hr_HYC_*
 super_H/
 R0
 physical_spin*
+
+7_spin/plt_path.in
+plt_bnd_*
+occupation_*
+tot_energy_*

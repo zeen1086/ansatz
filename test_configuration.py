@@ -53,6 +53,8 @@ class ConfigurationTests(unittest.TestCase):
         krows = output[ROOT / "5_wannier/nscf.in"].split("K_POINTS crystal\n")[1].splitlines()
         self.assertEqual(int(krows[0]), 72)
         self.assertAlmostEqual(sum(float(row.split()[3]) for row in krows[1:]), 1)
+        self.assertIn("nline=  3", output[ROOT / "7_spin/plt_path.in"])
+        self.assertIn("npt= 20", output[ROOT / "7_spin/plt_path.in"])
         spinor = render(self.altered("nspin = 1", "nspin = 2"))
         self.assertIn("spinors = true", spinor[ROOT / "5_wannier/CrI3.win"])
         self.assertIn("noncolin=.true.", spinor[ROOT / "5_wannier/nscf.in"])
@@ -122,7 +124,7 @@ end program
             scf, potential, wan = base/"1_scf", base/"4_potential", base/"5_wannier/make_wan"
             for path in (scf, potential, wan): path.mkdir(parents=True)
             p = load()
-            p.update(scf_dir=str(scf), func_dir=str(potential))
+            p.update(scf_dir=str(scf), func_dir=str(potential), split_super_x=1, split_super_y=1, split_super_z=1)
             (base/"parameter_mod.f90").write_text(fortran_module(p))
             binaries = []
             for name in names:
@@ -136,11 +138,11 @@ end program
             values = np.arange(nx*ny*nz*4, dtype="<f8").reshape((-1,4), order="F")
             write_records(scf/"V_HYC_dp", grid, values.tobytes(order="F"))
             write_records(scf/"V_QE", grid)
-            extended = np.arange((nx+1)*(ny+1)*(nz+1)*18, dtype="<f8").reshape((-1,3,2,3), order="F")
+            extended = np.arange((nx+1)*(ny+1)*(nz+1)*3*(p["n_func"]//3)*3, dtype="<f8").reshape((-1,3,p["n_func"]//3,3), order="F")
             write_records(potential/"V_func_tmp_tmp", b"", b"", b"", extended.tobytes(order="F"), b"")
             subprocess.run([str(binaries[0])], cwd=potential, check=True, stdout=subprocess.DEVNULL)
-            got = np.frombuffer(read_records(potential/"V_func_tmp")[3], dtype="<f8").reshape((-1,3,2,3), order="F")
-            expected = extended.reshape((nx+1,ny+1,nz+1,3,2,3), order="F")[:nx,:ny,:nz].reshape((-1,3,2,3), order="F")
+            got = np.frombuffer(read_records(potential/"V_func_tmp")[3], dtype="<f8").reshape((-1,3,p["n_func"]//3,3), order="F")
+            expected = extended.reshape((nx+1,ny+1,nz+1,3,p["n_func"]//3,3), order="F")[:nx,:ny,:nz].reshape((-1,3,p["n_func"]//3,3), order="F")
             np.testing.assert_array_equal(got, expected)
             shutil.copyfile(scf/"V_HYC_dp", potential/"V_HYC_dp")
             (potential/"super_atom").write_text("".join(f"{'Cr':14s}{0.:20.10f}{0.:20.10f}{0.:20.10f}\n" for _ in range(2)))

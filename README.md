@@ -60,7 +60,9 @@ The SCF/NSCF steps use the matching fixed scalar potential and saved state. Repl
 with `prefix` if changed. The supplied workflow uses no outer `dis_win_min/max` bounds,
 `use_ws_distance=false`, and the contiguous `first_band..last_band` window.
 
-Convert the standard `_u.mat`, `_u_dis.mat`, `_hr.dat` files into the records used here:
+Convert the standard `_u.mat`, `_u_dis.mat`, `_hr.dat` files into the records used here.
+If a customized Wannier90 already exports the matching HYC records, use those directly
+or convert to a separate directory for comparison; existing records are protected:
 
 ```bash
 python3 5_wannier/prepare.py 5_wannier
@@ -76,8 +78,23 @@ the Wannier generator writes sequential `make_wan/wan_*` records, normalized by
 `sqrt(Ngrid) * Nk`. Provide matching `V_HYC_dp` in `5_wannier`.
 Generate Wannier weights before fitting with `bash 5_wannier/make_wan/run_w_density.sh`.
 
-After fitting, place the validated fitted field at `func_dir/V_func_tmp_tmp`, then run
-`make_R_vec` to write `R_vec` and `V_func_tmp` in `func_dir`; its grid comes from `scf_dir`.
+For `V_split`, `super_atom` lists the magnetic Cr sites only, in cell x/y/z order
+(z fastest), followed by the two Cr sites in each cell. `polar2` contains the matching
+moment magnitude, polar angle and azimuth in degrees. `split_nspinor=6` writes the same
+six-channel ordering used by spin assembly; `2` retains the two-site output format.
+The default extraction is a `2x2x1` training cell (four primitive-cell labels per input).
+Use spin configurations whose six-channel design has full rank.
+
+After fitting and symmetry projection, export the fitted kernel:
+
+```bash
+python3 4_potential/fit/export_potential.py 4_potential/fit/V_func_com_ortho_channel_v1_sym
+python3 run.py 4_potential/make_R_vec.f90
+```
+
+This writes `V_func_tmp_tmp`, `R_vec` and `V_func_tmp` in `func_dir`; the grid comes from
+`scf_dir`. The exporter refuses to replace an existing tensor. `n_func=36` exports both
+linear and modulation channels; `18` exports only the linear channels.
 Convert Wanniers to that grid, then use the accelerated RVR implementation:
 
 ```bash
@@ -105,7 +122,9 @@ In `7_spin/spin.in`, put all polar angles on the first line and all azimuthal an
 second, in degrees. Each line contains `2*period_x*period_y*period_z` values. Ordering is
 cell x, then y, then z (z fastest), with Cr sites 1 and 2 in each cell. An optional
 `response_sites.in` contains a count followed by zero-based physical site indices;
-without it torque is calculated for all sites.
+without it torque is calculated for all sites. `configure.py` also generates
+`7_spin/plt_path.in`; its interpolation count uses `band_segments`. The band program
+supports one or multiple MPI ranks and is run from `7_spin` after compiling it.
 
 ```bash
 bash 7_spin/run_spin.sh

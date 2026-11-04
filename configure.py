@@ -10,6 +10,7 @@ from parameters import ROOT, fortran_module, load
 
 def render(values: dict) -> dict[Path, str]:
     p = dict(values)
+    p["band_path_points"] = f"{values['band_segments']:3d}"
     p["spinors"] = "true" if values["nspin"] == 2 else "false"
     p["noncolin"] = ".true." if values["nspin"] == 2 else ".false."
     p["write_v_qe"] = ".true." if values["write_v_qe"] else ".false."
@@ -23,7 +24,7 @@ def render(values: dict) -> dict[Path, str]:
     a = p["a0"] * 0.529177210903
     p["unit_cell"] = f"{a:.12f} 0 0\n{-a/2:.12f} {math.sqrt(3)*a/2:.12f} 0\n0 0 {a*p['celldm3']:.12f}"
     outputs = {ROOT / ".build/parameter_mod.f90": fortran_module(values)}
-    for stage in ("1_scf", "2_band", "3_band_no_mag", "5_wannier"):
+    for stage in ("1_scf", "2_band", "3_band_no_mag", "5_wannier", "7_spin"):
         for source in (ROOT / stage).glob("*.template"):
             target = source.with_suffix("")
             if target.suffix == ".win":

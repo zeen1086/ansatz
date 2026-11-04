@@ -17,12 +17,12 @@ program extract
         character(len=20) :: formatname
         integer :: z_box,io,nspinor,n_dep
         real:: r
-        real,allocatable    :: angle_file(:,:),to_write(:,:)
-        real,allocatable    :: amp(:),theta(:),phi(:)
+        real(8),allocatable    :: angle_file(:,:),to_write(:,:)
+        real(8),allocatable    :: amp(:),theta(:),phi(:)
 
         integer,allocatable :: sym_BZ(:,:)
 
-        pi=3.1415926d0
+        pi=acos(-1d0)
         n_dep=p_split_nspinor
         i_atom=0
         open(unit=101,file='super_atom',action='read'&
@@ -49,12 +49,15 @@ program extract
         super_x=p_split_super_x
         super_y=p_split_super_y
         super_z=p_split_super_z
+        if (n_atom /= 2*super_x*super_y*super_z) error stop 'super_atom must list two Cr sites per cell, z then y then x'
         allocate(spin(n_dep*3))
         allocate(to_write(n_dep,3))
 
         open(unit=101,file='./V_HYC_dp',access='sequential',action='read'&
                 &,form='unformatted')
                 read(101) nx,ny,nz
+                if (mod(nx,super_x)/=0 .or. mod(ny,super_y)/=0 .or. mod(nz,super_z)/=0) &
+                    error stop 'indivisible split grid'
                 print*,'nx ny nz=',nx,ny,nz
                 allocate(read_V(nx*ny*nz,4))
                 allocate(V1((nx/super_x+1)*(ny/super_y+1)*(nz/super_z+1),4))
@@ -85,13 +88,21 @@ program extract
 
                 open(unit=103,file='./V'//trim(file_char),action='write'&
                         &, access='append',status='replace',form='unformatted')
-                        write(103) (nx+1)*(ny+1)*(nz+1)/(super_x*super_y*super_z)
+                        write(103) size(V1,1)
                         write(103) V1
                 close(103)
 
-                if(iy_site .eq. 0) then
-                        to_write(1,:)= spin_all(1,:)   !
-                        to_write(2,:)= spin_all(2,:)   !
+                if (n_dep == 2) then
+                        to_write(1,:)=spin_all(magnetic_index(ix_site,iy_site,iz_site,1),:)
+                        to_write(2,:)=spin_all(magnetic_index(ix_site,iy_site,iz_site,2),:)
+                else
+                        ! Same physical channel order as the spin Hamiltonian assembly.
+                        to_write(1,:)=spin_all(magnetic_index(ix_site,iy_site,iz_site,2),:)
+                        to_write(2,:)=spin_all(magnetic_index(ix_site,iy_site,iz_site,1),:)
+                        to_write(3,:)=spin_all(magnetic_index(ix_site,iy_site+1,iz_site,1),:)
+                        to_write(4,:)=spin_all(magnetic_index(ix_site+1,iy_site,iz_site,1),:)
+                        to_write(5,:)=spin_all(magnetic_index(ix_site+1,iy_site,iz_site,2),:)
+                        to_write(6,:)=spin_all(magnetic_index(ix_site,iy_site+1,iz_site,2),:)
                 endif
 
                 call int2char(n_dep*3,nspinor_char)
@@ -113,6 +124,12 @@ program extract
         close(203)
 
 contains
+integer function magnetic_index(x,y,z,site)
+        integer,intent(in) :: x,y,z,site
+        magnetic_index=2*(modulo(z,super_z)+super_z*modulo(y,super_y) &
+          +super_z*super_y*modulo(x,super_x))+site
+end function magnetic_index
+
 
 subroutine int2char(in_int,out_char)
         integer,intent(in)              :: in_int

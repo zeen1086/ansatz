@@ -22,7 +22,7 @@ program R_sym
         real(kind(0d0)),allocatable  :: B_general_old(:,:,:,:)
         real(kind(0d0)),allocatable  :: B_general(:,:,:,:)
 
-  n_spinor=p_split_nspinor
+  n_spinor=p_n_func/3
   open(unit=101,file=p_scf_dir//'V_HYC_dp',access='sequential',action='read'&
                 &,form='unformatted')
         read(101) nx,ny,nz

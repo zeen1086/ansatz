@@ -342,15 +342,8 @@ wan_max = p_wan_max
   endif
 
   if (my_rank .eq. 0) then
-    if (nspin .eq. 1) then
-      if (mod(iwan, 2) .eq. 0) then
-        call int2char(iwan/2, iwan_char)
-      else
-        call int2char((iwan + 1)/2, iwan_char)
-      endif
-    else
-      call int2char(iwan, iwan_char)
-    endif
+    ! Output names use spin rows; input Wannier files use orbital indices.
+    call int2char(iwan, iwan_char)
     tw = MPI_WTIME()
     if (size .eq. 1) then
       RVR = RVR_local

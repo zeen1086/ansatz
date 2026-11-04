@@ -32,16 +32,16 @@ broadening = [0.002] # eV
 selected_eta = 1
 
 [potential]
-split_nspinor = 2
-split_super_x = 1
-split_super_y = 1
+split_nspinor = 6
+split_super_x = 2
+split_super_y = 2
 split_super_z = 1
-atom_super_x = 1
+atom_super_x = 2
 atom_super_y = 2
 atom_super_z = 1
 fit_nspinor = 6 # fixed six-channel CrI3 geometry
 n_file = 30
-n_kind = 2
+n_kind = 4
 weight_floor = 0.1
 prox_mu_rel = 0.1
 symmetry_tolerance = 0.001

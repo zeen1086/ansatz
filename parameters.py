@@ -25,6 +25,7 @@ def load(path: Path | None = None) -> dict:
                 raise ValueError(f"duplicate global parameter: {key}")
             values[key] = value
     positive = ("nwan", "nspin", "nr1", "nr2", "nr3", "nk1", "nk2", "nk3",
+                "split_super_x", "split_super_y", "split_super_z", "atom_super_x", "atom_super_y", "atom_super_z",
                 "nx", "ny", "nz", "period_x", "period_y", "period_z", "n_file", "n_kind",
                 "band_energy_points", "dos_points", "threads", "rvr_chunk", "rvr_channel_block")
     for key in positive:
@@ -36,8 +37,12 @@ def load(path: Path | None = None) -> dict:
                 raise ValueError(f"{key} must be finite")
     if values["nspin"] not in (1, 2) or values["n_func"] not in (18, 36):
         raise ValueError("the shared spin assembly supports nspin=1/2 and n_func=18/36")
-    if values["fit_nspinor"] != 6 or values["split_nspinor"] != 2:
-        raise ValueError("the supplied CrI3 site maps require fit_nspinor=6 and split_nspinor=2")
+    if values["fit_nspinor"] != 6 or values["split_nspinor"] not in (2,6):
+        raise ValueError("the supplied CrI3 site maps require fit_nspinor=6 and split_nspinor=2/6")
+    if type(values["band_segments"]) is not int or not 1 <= values["band_segments"] <= 999:
+        raise ValueError("band_segments must be in 1..999")
+    if values["n_kind"] > values["split_super_x"]*values["split_super_y"]*values["split_super_z"]:
+        raise ValueError("n_kind exceeds the number of split primitive cells")
     if not 1 <= values["wan_min"] <= values["wan_max"] <= values["nwan"]:
         raise ValueError("require 1 <= wan_min <= wan_max <= nwan")
     if (not 1 <= values["first_band"] <= values["last_band"] <= values["nbnd"]

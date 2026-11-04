@@ -122,11 +122,9 @@ Ef = p_ef
 
     irept = 1
     open(unit=101, file=trim(p_super_h_dir)//'ir_vec_HYC', status='old')
-    do
-        read(101,'(3I8)', iostat=io) ir_vec(irept,:)
-        if (io /= 0) exit
-        irept = irept + 1
-    end do
+    do irept=1,nrept
+        read(101,'(3I8)') ir_vec(irept,:)
+    enddo
     close(101)
 
     ir_vec(:,1) = ir_vec(:,1) * period_x
@@ -142,8 +140,10 @@ Ef = p_ef
     ! 读取 K 路径
     open(unit=101, file='./plt_path.in', status='old')
     read(101,'(A200)') title
+    if (index(title,'! Generated')==1) read(101,'(A200)') title
     read(101,'(A6,I3)') useless_string, nline
     read(101,'(A4,I3)') useless_string, npt
+    if (min(nline,npt)<1) error stop 'band path needs positive line and point counts'
     nk = nline * npt
 
     allocate(pt_k(nk), eig_list(nk,H_dim), spin_list(nk,H_dim))
@@ -193,12 +193,7 @@ Ef = p_ef
     end do
     end do
 
-    muti_pool = 0
-    do
-        muti_pool = muti_pool + 1
-        if (muti_pool*(size-1) > nk) exit
-    end do
-    muti_pool = muti_pool - 1
+    muti_pool = (nk-1)/max(1,size-1)
     npool = nk
 
     ! 主进程读取 Hamiltonian 并广播
@@ -223,6 +218,13 @@ Ef = p_ef
 
         eig_list = 0.0_dp
         do iz = 1, 1
+            if (size==1) then
+                do ik=1,nk
+                    call calculate_point()
+                    eig_list(ik,:)=eig_tmp
+                    spin_list(ik,:)=spin_tmp
+                enddo
+            else
             do ipool = 1, nk
                 ! 使用 MPI_DOUBLE_PRECISION
                 call MPI_RECV(eig_list(ipool,:), H_dim, MPI_DOUBLE_PRECISION, &
@@ -230,6 +232,7 @@ Ef = p_ef
                 call MPI_RECV(spin_list(ipool,:), H_dim, MPI_DOUBLE_PRECISION, &
                               MPI_ANY_SOURCE, ipool+npool, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
             end do
+            endif
             call MPI_Barrier(MPI_COMM_WORLD, ierr)
         end do
 
@@ -257,9 +260,25 @@ Ef = p_ef
                 ipool = imuti_pool*(size-1) + my_rank
                 if (ipool > npool) cycle
 
-                call cpu_time(t1)
-                ikxy = pool(ipool, iz)
+                ikxy = pool(ipool,iz)
                 ik = ikxy
+                call calculate_point()
+
+                call MPI_SEND(eig_tmp, H_dim, MPI_DOUBLE_PRECISION, &
+                              0, ikxy, MPI_COMM_WORLD, ierr)
+                call MPI_SEND(spin_tmp, H_dim, MPI_DOUBLE_PRECISION, &
+                              0, ikxy+npool, MPI_COMM_WORLD, ierr)
+            end do
+            call MPI_Barrier(MPI_COMM_WORLD, ierr)
+        end do
+    end if
+
+    call mpi_finalize(ierr)
+
+contains
+
+    subroutine calculate_point()
+                call cpu_time(t1)
 
                 ! 计算相位 phase0
                 do c_ix=0,period_x-1
@@ -346,18 +365,7 @@ Ef = p_ef
                     close(101)
                 end if
 
-                call MPI_SEND(eig_tmp, H_dim, MPI_DOUBLE_PRECISION, &
-                              0, ikxy, MPI_COMM_WORLD, ierr)
-                call MPI_SEND(spin_tmp, H_dim, MPI_DOUBLE_PRECISION, &
-                              0, ikxy+npool, MPI_COMM_WORLD, ierr)
-            end do
-            call MPI_Barrier(MPI_COMM_WORLD, ierr)
-        end do
-    end if
-
-    call mpi_finalize(ierr)
-
-contains
+    end subroutine calculate_point
 
     subroutine int2char(in_int, out_char)
         integer, intent(in) :: in_int

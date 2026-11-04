@@ -633,7 +633,7 @@ subroutine write_fit_sample(fit_coef, raw_feature)
         real(dp), intent(in) :: raw_feature(n_sample,n_feat,n_comp)
         integer :: isample, jf, ic
 
-        isample = (10 - 1) * n_kind + 1
+        isample = (min(10,n_file) - 1) * n_kind + 1
         V_pred(:,:) = 0d0
         do jf = 1, n_feat
         do ic = 1, 3

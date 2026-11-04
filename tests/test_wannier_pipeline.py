@@ -61,8 +61,29 @@ class WannierPipelineTests(unittest.TestCase):
             with (w/'tmp/B_general_1').open('rb') as stream:row=read_array(stream,'<c16',(18,1,2))
             # R_vec permutes both the field and Wannier samples: norm remains 1.
             np.testing.assert_allclose(row[0,0,:],[.8,.4-.6j],atol=1e-13,rtol=0)
-            result={'status':'PASS','wannier_norm':float(np.sum(abs(a)**2)),'rvr_known_row':[str(z) for z in row[0,0,:]]}
-            self.assertAlmostEqual(result["wannier_norm"],1.0,places=13)
+            subprocess.run(['mpirun','-np','2',str(w/'rvr'),'2'],cwd=w,env=env,check=True,timeout=30)
+            with (w/'tmp/B_general_2').open('rb') as stream: second=read_array(stream,'<c16',(18,1,2))
+            np.testing.assert_allclose(second[0,0,:],[.4+.6j,-.8],atol=1e-13,rtol=0)
+            with (w/'tmp/B_general_1').open('rb') as stream: first=read_array(stream,'<c16',(18,1,2))
+            np.testing.assert_array_equal(first,row)
+            self.assertAlmostEqual(float(np.sum(abs(a)**2)),1.0,places=13)
+            # Check the real band entry point with one and two MPI ranks.
+            (w/'super').mkdir();(w/'tot_HR').mkdir()
+            (w/'super/ir_vec_HYC').write_text(f'{0:8d}{0:8d}{0:8d}\n')
+            p.update(period_x=1,period_y=1,period_z=1,nx=1,ny=1,nz=1,super_h_dir=str(w/'super'))
+            (w/'parameter_mod.f90').write_text(fortran_module(p))
+            h=np.array([[1,.2j],[-.2j,2]],dtype='<c16');(w/'tot_HR/hr_1').write_bytes(h.tobytes(order='F'))
+            path='! Generated fixture\ntoy\nnline=  1\nnpt=  2\n'+''.join(f'{x:12.6f}' for x in [0,0,0,.5,0,0])+'\n'
+            (w/'plt_path.in').write_text(path)
+            subprocess.run([compiler]+flags+[str(w/'parameter_mod.f90'),str(r/'7_spin/band.f90'),'-o',str(w/'band')]
+                           +([] if 'mpiifort' in compiler else ['-lblas','-llapack']),cwd=w,check=True)
+            previous=None
+            for ranks in (1,2):
+                subprocess.run(['mpirun','-np',str(ranks),str(w/'band')],cwd=w,env=env,check=True,timeout=30)
+                data=np.loadtxt(w/'plt_bnd_toy')
+                np.testing.assert_allclose(data[:,5],np.repeat(np.linalg.eigvalsh(h),2),atol=5.1e-7,rtol=0)
+                if previous is not None:self.assertEqual(previous,(w/'plt_bnd_toy').read_bytes())
+                previous=(w/'plt_bnd_toy').read_bytes();(w/'plt_bnd_toy').unlink()
 
 
-if __name__=="__main__": unittest.main(verbosity=2)
+if __name__=='__main__':unittest.main(verbosity=2)
