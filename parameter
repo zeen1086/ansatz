@@ -5,13 +5,6 @@ nscf_dir = "5_wannier"
 rvr_dir = "6_RVR"
 super_h_dir = "6_RVR/super_H"
 pseudo_dir = "pseudopotentials"
-native_data_root = "data/native_pw"
-native_remote_root = "/home/25_li/noncollinear/CrI3/deployment/pure_s_derivative_20260911_r00"
-qe_root = "/home/chen/software/qe-7.1"
-mpif90 = "mpiifort"
-mkl_include = "/opt/intel/oneapi/mkl/2021.2.0/include"
-native_libpw = "data/native_pw/qx_variational_plus_ethr_floor_r01/libpw_cr_only.a"
-native_gradcorr = "data/native_pw/qx_variational_plus_ethr_floor_r01/gradcorr.f90"
 
 [model]
 n_func = 36
@@ -64,6 +57,8 @@ fit_tolerance = 1e-10
 
 [qe]
 prefix = "CrI3"
+export_grid = "smooth"
+write_v_qe = true
 ecutwfc = 85.0
 nr1 = 81
 nr2 = 81
@@ -95,9 +90,6 @@ dis_conv_tol = 1e-6
 num_iter = 0
 
 [spin]
-spin_s = 1.5
-angle_degrees = 0.75
-cell_residual_limit = 0.02
 band_energy_min = 0.0
 band_energy_max = 3.0
 band_energy_points = 300
@@ -113,21 +105,3 @@ lambda_high = 0.0
 trace_r = [0, 0, 0]
 trace_i = 11
 trace_j = 20
-response_j_sha256 = "161805877f57501ab5eb61b769091caf4b52cade6a59e8ba8e03dd3e230467dd"
-
-[native]
-# Separate from the 44-orbital Wannier model above; these describe native-PW data.
-s31_kpoints = 48
-s13_kpoints = 48
-sd_kpoints = 49
-native_nbnd = 252
-native_occupied = 210
-native_block = 32768
-native_mpi_ranks = 16
-native_max_seconds = 60000
-native_layer1_seconds = 13800
-native_three_cell_seconds = 14400
-native_scf_seconds = 25200
-native_diago_thr = 1e-12
-sd_diago_thr = 1e-10
-response_anisotropy_mev = 0.3627

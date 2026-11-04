@@ -11,6 +11,7 @@ from parameters import ROOT, fortran_module, load
 
 def render(values: dict) -> dict[Path, str]:
     p = dict(values)
+    p["write_v_qe"] = ".true." if values["write_v_qe"] else ".false."
     p["structure"] = (ROOT / "1_scf/structure.in").read_text().strip()
     p["pseudo_dir"] = repr(p["pseudo_dir"])
     p["nk"] = p["nk1"] * p["nk2"] * p["nk3"]

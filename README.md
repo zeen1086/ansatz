@@ -5,6 +5,7 @@ Ansatz potential fitting, Wannier projection, RVR construction, and spin Hamilto
 ## Layout
 
 ```text
+0_QE/              Modified QE sources (magnetic and nonmagnetic)
 1_scf/             Magnetic SCF and potential-export templates
 2_band/            Magnetic band-structure templates
 3_band_no_mag/     Nonmagnetic SCF and band-structure templates
@@ -14,7 +15,6 @@ Ansatz potential fitting, Wannier projection, RVR construction, and spin Hamilto
 6_RVR/             RVR construction and combination
   speedup/         Blocked ZGEMM implementation
 7_spin/            Spin Hamiltonian, bands, occupations, and torques
-  native_pw/       Native plane-wave potential and torque routines
 parameter          Global settings (TOML)
 configure.py       Generate QE/Wannier inputs and the Fortran parameter module
 build.py           Compile Fortran programs
@@ -23,8 +23,8 @@ build.py           Compile Fortran programs
 ## Configuration and build
 
 Requires Python 3.11+ (or Python 3.10 with `tomli`), NumPy, and a Fortran compiler
-with BLAS/LAPACK. MPI programs also require MPI. The native plane-wave routines
-use the modified Quantum ESPRESSO libraries specified in `parameter`.
+with BLAS/LAPACK. MPI programs also require MPI. See `0_QE/README.md` for the
+QE source replacements used by the SCF and Wannier stages.
 
 Edit `parameter` for paths, grids, model dimensions, fitting controls, and spin
 settings. Atomic positions are in `1_scf/structure.in`; Wannier projections are
@@ -55,8 +55,7 @@ Provide the pseudopotentials, SCF saved states, training fields, and Wannier dat
 for the chosen calculation. The Wannier/RVR chain requires matching `wan_data`,
 `cal_TF`, `V_HYC_dp`, `R_vec`, and `V_func_tmp`. Spin assembly also needs the
 Hamiltonian files in `super_h_dir` and a local `spin.in` texture.
-The Wannier spin assembly supports `n_func=18/36`; the native-PW full14 routines
-use a separate 14-kernel representation.
+The spin assembly supports `n_func=18/36`.
 
 Run both RVR implementations from `6_RVR/`; the first argument selects the row:
 
@@ -69,14 +68,11 @@ mpirun -np 2 ./speedup/cal_RVR_zgemm.x 1
 ```
 
 The reference RVR and Wannier generators require at least two MPI ranks.
-Combine RVR rows with `6_RVR/combine.x`. The native QE programs have individual
-`build.sh` scripts under `7_spin/native_pw/`; configure their library paths first.
-`7_spin/fit_native_torque.py` reads saved three-term torques and fits J1–J3.
+Combine RVR rows with `6_RVR/combine.x`; `7_spin/run_spin.sh` builds and runs
+the spin Hamiltonian and torque programs.
 
 Basic checks:
 
 ```bash
 python3 -B test_configuration.py
-python3 -B 7_spin/torque_s13.py check
-python3 -B 7_spin/response_matrix.py check
 ```

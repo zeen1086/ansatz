@@ -1,8 +1,6 @@
 """Small offline checks: shared settings, safe generation and Fortran record IO."""
 from pathlib import Path
 import ast
-import importlib.util
-import os
 import shutil
 import struct
 import subprocess
@@ -49,6 +47,9 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("6 12 1 0 0 0", output[ROOT / "1_scf/scf.in"])
         self.assertIn("mp_grid = 6 12 1", output[ROOT / "5_wannier/CrI3.win"])
         self.assertIn("last_k=72", output[ROOT / "5_wannier/wfck2r.in"])
+        self.assertIn("write_v_qe=.true.", output[ROOT / "1_scf/print_V.in"])
+        no_raw = render(self.altered("write_v_qe = true", "write_v_qe = false"))
+        self.assertIn("write_v_qe=.false.", no_raw[ROOT / "1_scf/print_V.in"])
         krows = output[ROOT / "5_wannier/nscf.in"].split("K_POINTS crystal\n")[1].splitlines()
         self.assertEqual(int(krows[0]), 72)
         self.assertAlmostEqual(sum(float(row.split()[3]) for row in krows[1:]), 1)
@@ -61,6 +62,8 @@ class ConfigurationTests(unittest.TestCase):
                               ("nk3 = 1", "nk3 = 0"), ("n_func = 36", "n_func = 42"),
                               ("selected_eta = 1", "selected_eta = 2"),
                               ("eta = 0.002", "eta = nan"),
+                              ('export_grid = "smooth"', 'export_grid = "invalid"'),
+                              ("write_v_qe = true", 'write_v_qe = "true"'),
                               ("num_bands = 80", "num_bands = 79")]:
             with self.subTest(after=after), self.assertRaises(ValueError):
                 self.altered(before, after)
@@ -80,31 +83,13 @@ class ConfigurationTests(unittest.TestCase):
                 ast.parse(path.read_text(), filename=str(path), feature_version=(3, 10))
         self.assertFalse((ROOT / "frozen_magnon").exists())
         self.assertFalse((ROOT / "wannier").exists())
-        for stage in ("1_scf", "2_band", "3_band_no_mag", "4_potential", "5_wannier", "6_RVR", "7_spin"):
+        self.assertFalse((ROOT / "7_spin/native_pw").exists())
+        for stage in ("0_QE", "1_scf", "2_band", "3_band_no_mag", "4_potential", "5_wannier", "6_RVR", "7_spin"):
             self.assertTrue((ROOT / stage).is_dir())
             for path in (ROOT / stage).rglob("*"):
                 if path.suffix in (".py", ".f90", ".sh", ".pbs"):
                     self.assertNotIn("THE.in", path.read_text(), str(path))
                     self.assertNotIn("frozen_magnon", path.read_text(), str(path))
-
-    def test_native_occupation_contract_uses_global_settings(self):
-        source = ROOT / "7_spin/native_pw/three_cell_torque_20260921_r02/run.py"
-        spec = importlib.util.spec_from_file_location("test_native_readout", source)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        with tempfile.TemporaryDirectory() as directory, patch.dict(module.PARAM, native_nbnd=4, native_occupied=2):
-            path = Path(directory) / "schema.xml"
-            row = ("<ks_energies><k_point weight='0.5'>0 0 0</k_point>"
-                   "<eigenvalues>-2 -1 1 2</eigenvalues>"
-                   "<occupations>1 1 0 0</occupations></ks_energies>")
-            path.write_text("<root><output><band_structure><nks>2</nks><nelec>2</nelec>"
-                            + row*2 + "</band_structure></output></root>")
-            result = module.band_data(path, 2)
-            self.assertEqual(result["occupied_states_per_k"], 2)
-            self.assertEqual(result["global_indirect_gap_Ry"], 4)
-            path.write_text(path.read_text().replace("1 1 0 0", "1 0.5 0.5 0"))
-            with self.assertRaises(AssertionError):
-                module.band_data(path, 2)
 
     @unittest.skipUnless(shutil.which("gfortran") or shutil.which("ifort"), "Fortran compiler is unavailable")
     def test_generated_fortran_values_and_row_validation(self):

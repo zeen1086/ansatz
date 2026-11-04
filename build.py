@@ -17,8 +17,8 @@ def build(sources: list[Path], fc: str, flags: list[str], libs: list[str], check
     for source in sources:
         source = source.resolve()
         source.relative_to(ROOT)
-        if "native_pw" in source.parts:
-            raise ValueError("build QE-linked native sources with their own build.sh")
+        if "0_QE" in source.parts:
+            raise ValueError("build these source replacements inside their matching QE tree")
         work = ROOT / ".build" / source.relative_to(ROOT).with_suffix("")
         work.mkdir(parents=True, exist_ok=True)
         module = ROOT / ".build/parameter_mod.f90"

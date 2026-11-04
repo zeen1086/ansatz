@@ -10,8 +10,7 @@ except ModuleNotFoundError:
     import tomli as tomllib  # Python 3.10 hosts may use an already installed tomli.
 
 ROOT = Path(__file__).resolve().parent
-PATH_KEYS = {"func_dir", "nscf_dir", "rvr_dir", "super_h_dir", "pseudo_dir",
-             "native_data_root", "qe_root", "mkl_include", "native_libpw", "native_gradcorr"}
+PATH_KEYS = {"func_dir", "nscf_dir", "rvr_dir", "super_h_dir", "pseudo_dir"}
 
 
 def load(path: Path | None = None) -> dict:
@@ -52,10 +51,8 @@ def load(path: Path | None = None) -> dict:
     if (not values["broadening"] or any(x <= 0 for x in values["broadening"])
             or not 1 <= values["selected_eta"] <= len(values["broadening"])):
         raise ValueError("positive broadening and a valid selected_eta are required")
-    if not 0 < values["weight_floor"] < 1 or values["spin_s"] <= 0:
-        raise ValueError("invalid weight_floor or spin_s")
-    if values["angle_degrees"] <= 0 or values["cell_residual_limit"] <= 0:
-        raise ValueError("angle_degrees and cell_residual_limit must be positive")
+    if not 0 < values["weight_floor"] < 1:
+        raise ValueError("invalid weight_floor")
     if len(values["channel_mask"]) != 6 or any(type(x) is not int or abs(x) > 1 for x in values["channel_mask"]):
         raise ValueError("channel_mask needs six integer values in -1..1")
     if len(values["channel_source"]) != 6 or any(type(x) is not int or not 1 <= x <= 6 for x in values["channel_source"]):
@@ -64,6 +61,8 @@ def load(path: Path | None = None) -> dict:
         raise ValueError("trace_r needs three integers")
     if not isinstance(values["prefix"], str) or not values["prefix"].replace("_", "").isalnum():
         raise ValueError("prefix must contain letters, digits or underscores")
+    if values["export_grid"] not in ("smooth", "dense") or type(values["write_v_qe"]) is not bool:
+        raise ValueError("export_grid must be smooth/dense and write_v_qe must be boolean")
     for key in ("ef", "eta", "a0", "celldm3", "ecutwfc", "conv_thr", "fit_tolerance"):
         if isinstance(values[key], bool) or not isinstance(values[key], (int, float)):
             raise ValueError(f"{key} must be numeric")
