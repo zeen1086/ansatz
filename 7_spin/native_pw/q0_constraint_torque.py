@@ -42,7 +42,7 @@ def run():
         rows[name]=dict(torque_about_global_y_Ry=tau.tolist(),sum_torque_Ry=float(sum(tau)),
             penalty_reconstructed_Ry=float(lam*np.sum((m-target)**2)),moments=m.tolist())
     result=dict(classification='DIAGNOSTIC',verdict='Q0_CONSTRAINT_TORQUE_NOISE_OBSERVED',rows=rows,
-       interpretation='Stationary-state constraint-balance torque estimate. Nonzero common-rotation torque diagnoses numerical/source-state limitations; not validated finite-q reference or formal Phi2/Phi4.',physical_release=False)
+       interpretation='Stationary-state constraint-balance torque estimate. Nonzero common-rotation torque diagnoses numerical/source-state limitations; not validated finite-q reference or formal Phi2/Phi4.')
     with (ROOT/'Q0_CONSTRAINT_TORQUE.json').open('x') as f:json.dump(result,f,indent=2)
     print(json.dumps(result,indent=2))
 if __name__=='__main__':

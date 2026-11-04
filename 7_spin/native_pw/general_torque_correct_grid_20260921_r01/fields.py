@@ -217,7 +217,7 @@ def main():
         print('GENERATED_SITE', site, flush=True)
     for label, directory in [('dynamic', dynamic), ('frozen', frozen)]:
         write_json(directory / 'COUNTERTERMS.json', {
-            'physical_release': False, 'cell': args.cell, 'spins': spins.tolist(), 'axes': axes.tolist(),
+            'cell': args.cell, 'spins': spins.tolist(), 'axes': axes.tolist(),
             'model': label, 'derivative_step_deg': .01, 'voxel_volume_bohr3': dv_grid,
             'rows_Ry': rows[label], 'counterterm_torque_Ry': [row['total'] for row in rows[label]],
             'definition': 'tau_total=tau_band+counterterm_torque_Ry; tau_band=-Tr(rho_out*dH/dtheta).',
@@ -227,7 +227,7 @@ def main():
             'limits': ['No electronic diagonalization or total torque in this generator.',
                        'Fresh centered scalar derivative uses0.01degree; no step-convergence claim.',
                        'General coordinate support is callable, not an independent physics acceptance.']})
-    write_json(out / 'GENERATED.json', {'physical_release': False, 'cell': args.cell,
+    write_json(out / 'GENERATED.json', {'cell': args.cell,
                'spins': spins.tolist(), 'axes': axes.tolist(), 'native_displacements': generated,
                'fm_native_directory': str(fm_directory), 'fm_native_reused': fm_reused,
                'dynamic_directory': str(dynamic), 'frozen_directory': str(frozen)})

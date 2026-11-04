@@ -54,15 +54,15 @@ def prepare():
   h=1e-5;ep=e.copy();em=e.copy();ep[2]=l.rotate(e[2],np.array(a.AXIS),h);em[2]=l.rotate(e[2],np.array(a.AXIS),-h)
   assert np.max(abs((kernel[sample]@ep-kernel[sample]@em)/(2*h)-kernel[sample,2,None]*np.cross(a.AXIS,e[2])*math.sin(h)/h))<1e-9
   del coarse,kernel,reference
- ref={'physical_release':False,'rows':{}};axis=np.tile(a.AXIS,(6,1))
+ ref={'rows':{}};axis=np.tile(a.AXIS,(6,1))
  for side in ('plus','minus'):
   d=V/'sd'/('blind0_'+side);state=json.loads((d/'RESULT.json').read_text());x=ET.parse(d/'tmp/CrI3.save/data-file-schema.xml')
   m=np.array(state['moments_muB']);e,details=f.c.spins({'status':'PRESENT','xml':ET.tostring(x.getroot(),encoding='unicode'),'xml_path':str(d),'xml_sha256':'not_needed_for_this_diagnostic','cell':'sd'})
   target=3*np.array(details['target_spins']);tau=q.torque(m,target,axis,12*state['dv'])
   ref['rows'][side]={'moments':m.tolist(),'site_torque_Ry':tau.tolist(),'scf_error_Ry':state['scf_error_Ry'],'achieved_spins':e.tolist()}
  l.save_json(R/'REFERENCE.json',ref)
- l.save_json(out/'RESULT.json',{'physical_release':False,'source':str(V/'fit14'),'method':'Exact SD fold plus existing physical-G lift; no refit','rank_source':14})
- l.save_json(R/'CONTRACT.json',{'physical_release':False,'scope':'Blind SD site0 plus/minus; actual directions; J1+J3 and J2 conditional readout','criteria':{'J1_plus_J3_relative':.02,'J2_relative':.02,'offsite_response_relative_L2':.02},'h_degrees':PARAM['angle_degrees'],'new_SCF':False,'band_diago_thr_init':1e-10,'source_wavefunctions':'Independent copy of existing SD FM WFC, never modified in place','torque_definition':'-int(rho_out dV)+int(rho_in dV)+int((V-Vnative) drho)'})
+ l.save_json(out/'RESULT.json',{'source':str(V/'fit14'),'method':'Exact SD fold plus existing physical-G lift; no refit','rank_source':14})
+ l.save_json(R/'CONTRACT.json',{'scope':'Blind SD site0 plus/minus; actual directions; J1+J3 and J2 conditional readout','criteria':{'J1_plus_J3_relative':.02,'J2_relative':.02,'offsite_response_relative_L2':.02},'h_degrees':PARAM['angle_degrees'],'new_SCF':False,'band_diago_thr_init':1e-10,'source_wavefunctions':'Independent copy of existing SD FM WFC, never modified in place','torque_definition':'-int(rho_out dV)+int(rho_in dV)+int((V-Vnative) drho)'})
  print('PREPARE_COMPLETE',flush=True)
 
 def bands_input(save):
@@ -114,7 +114,7 @@ def analyze():
   responses[name]={'Phi_tau_Ry':phi.tolist(),'fit':fit}
  cp=responses['candidate'];df=responses['DFT'];error=float(np.linalg.norm(np.array(cp['Phi_tau_Ry'])[1:]-np.array(df['Phi_tau_Ry'])[1:])/np.linalg.norm(np.array(df['Phi_tau_Ry'])[1:]))
  rel={k:abs(cp['fit']['identified_combinations_meV'][k]/v-1) for k,v in df['fit']['identified_combinations_meV'].items()}
- l.save_json(R/'RESULT.json',{'physical_release':False,'preliminary':True,'responses':responses,'relative_J_combination_errors':rel,'offsite_response_relative_L2':error,'diagnostic_pass':max([error,*rel.values()])<=.02,'limits':['One achieved-spin path, finite constraint and angle; no full Hessian or physical uncertainty','SD identifies J1+J3 and J2 only; no standalone J1 or J3','Native fixed-potential band calculation, not additional SCF']})
+ l.save_json(R/'RESULT.json',{'preliminary':True,'responses':responses,'relative_J_combination_errors':rel,'offsite_response_relative_L2':error,'diagnostic_pass':max([error,*rel.values()])<=.02,'limits':['One achieved-spin path, finite constraint and angle; no full Hessian or physical uncertainty','SD identifies J1+J3 and J2 only; no standalone J1 or J3','Native fixed-potential band calculation, not additional SCF']})
  print('SD_TORQUE_ANALYSIS_COMPLETE',flush=True)
 
 if __name__=='__main__':

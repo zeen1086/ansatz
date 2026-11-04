@@ -129,7 +129,7 @@ def process(mode: str, source: Path, seed: Path, output: Path, metrics_path: Pat
     assert shape == (FINE if mode == 'restrict' else COARSE)
     target = COARSE if mode == 'restrict' else FINE
     size = math.prod(target) * 4 * 8
-    result = {'physical_release': False, 'operation': mode, 'source': str(source.resolve()),
+    result = {'operation': mode, 'source': str(source.resolve()),
               'physical_G_source': str(seed.resolve()), 'output': str(output.resolve()),
               'input_grid': list(shape), 'output_grid': list(target), **details, 'components': [],
               'meaning': 'Explicit physical-G spectral projection; raw nonlinear HXC is not assumed bandlimited.',
@@ -190,7 +190,7 @@ def self_check() -> None:
             f.write(struct.pack('<i', values.nbytes))
         readback, shape = read_field(path)
         assert shape == fine and np.array_equal(readback, values)
-    print(json.dumps({'self_check': 'PASS', 'physical_release': False,
+    print(json.dumps({'self_check': 'PASS',
                       'physical_lift_error': difference(exact, oracle),
                       'naive_fine_error': difference(naive, oracle),
                       'naive_coarse_roundtrip_error': difference(naive[::3], samples),

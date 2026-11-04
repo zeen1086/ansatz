@@ -118,7 +118,7 @@ def fit(config_path, project):
                           'rank': int(np.linalg.matrix_rank(design[block], tol=1e-10)),
                           'relative_residual': float(np.linalg.norm(residual[block]) / max(np.linalg.norm(target[block]), 1e-300))})
         offset += count
-    result = {'physical_release': False, 'exchange_convention': CONVENTION, 'spin_S': spin_s,
+    result = {'exchange_convention': CONVENTION, 'spin_S': spin_s,
               'scope': 'Conditional isotropic J1--J3 finite-angle torque fit; higher shells and non-Heisenberg terms excluded',
               'rank': int(rank), 'singular_values': singular.tolist(),
               'J_meV': dict(zip(('J1', 'J2', 'J3'), j.tolist())) if rank == 3 else None,
@@ -205,7 +205,7 @@ def connect_full14(project, existing, output):
         src = existing / name
         shutil.copy2(src, output / ('s31_'+name))
         sources[str(src)] = sha256(src)
-    certificate = {'physical_release': False, 'status': 'FULL14_S31_FOLDED_FIELDS_EQUIVALENT',
+    certificate = {'status': 'FULL14_S31_FOLDED_FIELDS_EQUIVALENT',
                    'method': 'All grid points, six site columns, both FM four-component fields; atol and relative kernel tolerance 1e-12',
                    'metrics': metrics, 'endpoint_field_metrics': endpoint_metrics,
                    'source_sha256': {**inputs, **sources},

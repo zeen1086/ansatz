@@ -99,13 +99,13 @@ def prepare():
                 assert a.shape == (math.prod(shape),6 if suffix=='actual' else 4)
                 pins[str(path)] = reader.sha256(path)
                 (d/'fits'/path.name).symlink_to(path)
-        reader.write_json(d/'fits/RESULT.json',{'method':'Reuse current full14 folds; no fit','physical_release':False})
+        reader.write_json(d/'fits/RESULT.json',{'method':'Reuse current full14 folds; no fit'})
     for c in cases():
         d=R/c['id'];d.mkdir();(d/'fits').symlink_to(R/c['cell']/'fits')
         reader.write_json(d/'REFERENCE.json',{'rows':{c['side']:{'moments':spins(c).tolist()}}})
     reader.write_json(R/'INPUTS.json',{'pins':pins,'cases':cases(),'J_sha256':JHASH,'new_scf':False,
         'coordinates':'x0..x5,y0..y5; axes +y,-x; K=-d(tau)/d(theta), meV/rad^2',
-        'A_meV_external':.3627,'A_in_direct_response':0.,'physical_release':False,
+        'A_meV_external':.3627,'A_in_direct_response':0.,
         'scope':'72 direct matrix endpoints; 6 half-step endpoints. No new fit, no Phi4/rates.',
         'storage':'Private newly copied WFC files removed only after both torque readouts validate; fields and logs retained.'})
     print('RESPONSE_MATRIX_PREPARED',flush=True)
@@ -167,7 +167,7 @@ def endpoint(index):
     save=out/'state/tmp/CrI3.save';assert save.is_relative_to(d) and not save.is_symlink()
     for path in save.glob('wfc*.dat'):
         assert path.is_file() and not path.is_symlink();path.unlink()
-    reader.write_json(d/'COMPLETE.json',{'case':c,'physical_release':False,'private_WFC_removed':True,
+    reader.write_json(d/'COMPLETE.json',{'case':c,'private_WFC_removed':True,
         'torque_sha256':{a:reader.sha256(out/f'TORQUES_{a}.json') for a in AXES}})
     print('RESPONSE_ENDPOINT_COMPLETE',c['id'],flush=True)
 
@@ -175,7 +175,7 @@ def endpoint(index):
 def analyze():
     assert reader.sha256(JFILE)==JHASH
     j=json.loads((R/'J123_frozen.json').read_text());J=np.array([j['J_meV'][f'J{i}'] for i in (1,2,3)]);S=j['spin_S']
-    result={'physical_release':False,'J_refitted':False,'J_sha256':JHASH,'cells':{},'missing':[]}
+    result={'J_refitted':False,'J_sha256':JHASH,'cells':{},'missing':[]}
     values={}
     for c in cases():
         d=R/c['id'];p=d/'COMPLETE.json'

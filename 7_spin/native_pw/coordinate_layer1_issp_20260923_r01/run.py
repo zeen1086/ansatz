@@ -1,4 +1,4 @@
-"""Authorized s31 calibration only: full-grid folded fits and four frozen endpoints."""
+"""Full-grid s31 folded fits and fixed-potential torque endpoints."""
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
@@ -109,7 +109,7 @@ def fit():
         for k in kernels.values():
             k.flush()
         metrics[kind] = {name: {'relative_residual_L2': math.sqrt(rss[name]/yn)} for name in x}
-    save_json(out/'RESULT.json', {'physical_release': False, 'rank_with_FM': 10, 'unidentified_kernel_directions': 4,
+    save_json(out/'RESULT.json', {'rank_with_FM': 10, 'unidentified_kernel_directions': 4,
               'folded_s31_independent_of_nullspace': True, 'samples': g.N, 'metrics': metrics,
               'scope': 's31 folded fields only; no unique14kernel or V_func_tmp emitted; same labels and FM for both fits'})
 
@@ -264,7 +264,7 @@ def endpoint(name, case, resume=False, axes_by_name=None):
             rows.append({'site': site, 'band': band, 'input_work': work, 'potential_mismatch_work': mismatch,
                          'total': math.fsum((band, work, mismatch))})
             print('TORQUE', name, case, rows[-1], flush=True)
-        save_json(out/('TORQUES' + ('_'+axis_name if axis_name else '') + '.json'), {'physical_release': False, 'variant': name, 'case': case,
+        save_json(out/('TORQUES' + ('_'+axis_name if axis_name else '') + '.json'), {'variant': name, 'case': case,
                   'spins': spins.tolist(), 'axes': axes.tolist(), 'rows_Ry': rows,
                   'site_torque_Ry_per_rad': [r['total'] for r in rows], **electronic,
                   'new_scf': False, 'startingwfc': 'atomic+random; same fixed Hamiltonian and convergence threshold',
@@ -278,7 +278,7 @@ def analyze():
     jref = np.array(fits['fits']['old_central_achieved']['Jspin_meV'])
     h = math.radians(fits['angle_degrees'])
     dft = (np.array(ref['rows']['plus']['site_torque_Ry'])-ref['rows']['minus']['site_torque_Ry'])/(2*h)
-    result = {'physical_release': False, 'calibration_only': True, 'DFT_Jspin_meV': jref.tolist(), 'variants': {}}
+    result = {'calibration_only': True, 'DFT_Jspin_meV': jref.tolist(), 'variants': {}}
     for name in ('nominal', 'actual'):
         rows = [json.loads((R/'endpoints'/name/c/'TORQUES.json').read_text()) for c in ('plus', 'minus')]
         for row, case in zip(rows, ('plus', 'minus')):

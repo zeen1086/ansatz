@@ -127,7 +127,7 @@ def main():
     hxc = math.fsum([eh, exc, -exc_core])
     nonband = math.fsum([hxc, -u_tilde])
     ion = 2 * float(xml.findtext('.//output/total_energy/ewald'))
-    result = {'physical_release': False, 'torque_interface_complete': False,
+    result = {'torque_interface_complete': False,
               'model': 'Serialized 42-function magnetic tangent plus native nonlinear scalar HXC of the same trial density.',
               'SD_mapping': 'Physical-G lift of complete assembled B42 plus fixed transverse offset; scalar HXC evaluated on fine grid.',
               'cell': args.cell, 'spins': spins.tolist(), 'native_directory': str(native_dir),

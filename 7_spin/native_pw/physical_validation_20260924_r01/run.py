@@ -1,4 +1,4 @@
-"""Authorized bounded SD recovery and matched-vector-constraint 2x2 path on ISSP."""
+"""SD constrained-SCF and matched-vector 2x2 calculations."""
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
@@ -94,7 +94,7 @@ def finish_sd(out,source,is_new,threshold=1e-10,preliminary=False):
     for name in ('RAW_DENSITY.bin','FROZEN_HXC.bin'):
         metrics=mod.process('restrict',fields/name,save/'charge-density.dat',samples/name,samples/(name+'.metrics.json'))
         assert max(c['in_sphere_coefficient_relative_l2'] for c in metrics['components'])<1e-11
-    write(out/'RESULT.json',{'physical_release':False,'new_SCF':is_new,**data,'input_lambda':12,'source':str(source)})
+    write(out/'RESULT.json',{'new_SCF':is_new,**data,'input_lambda':12,'source':str(source)})
     print('SD_COMPLETE',case,flush=True)
 
 def path(case, retry=False):
@@ -130,7 +130,7 @@ def finish_path(out,log,angle,threshold=1e-9,preliminary=False):
     assert abs(achieved-h)<math.radians(5), 'Wrong achieved branch'
     from decimal import Decimal
     edft=2*Decimal(x.findtext('.//output/total_energy/etot'))
-    write(out/'RESULT.json',{'physical_release':False,'protocol':'same finite vector lambda=4 and Cr target magnitude as h1p5/h3; iodine unconstrained','angle_target_degrees':angle,'angle_actual_degrees':math.degrees(achieved),'E_DFT_Ry':str(edft),'P_eff_Ry':penalty,'F_Ry':str(edft+Decimal(str(penalty))),'tau_target_Ry':float((tau[:4].sum()-tau[4:].sum())/2),'global_torque_Ry':float(tau.sum()),'Cr_magnitudes_muB':np.linalg.norm(m,axis=1).tolist(),**data})
+    write(out/'RESULT.json',{'protocol':'same finite vector lambda=4 and Cr target magnitude as h1p5/h3; iodine unconstrained','angle_target_degrees':angle,'angle_actual_degrees':math.degrees(achieved),'E_DFT_Ry':str(edft),'P_eff_Ry':penalty,'F_Ry':str(edft+Decimal(str(penalty))),'tau_target_Ry':float((tau[:4].sum()-tau[4:].sum())/2),'global_torque_Ry':float(tau.sum()),'Cr_magnitudes_muB':np.linalg.norm(m,axis=1).tolist(),**data})
     print('PATH_COMPLETE',case,flush=True)
 
 def check():

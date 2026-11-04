@@ -1,6 +1,4 @@
-# Global configuration (TOML, Python >= 3.11). Edit here, then rerun configure.py
-# and rebuild Fortran programs. These defaults preserve the exported algorithms;
-# they are examples, not a matched/validated set of material data.
+# Global settings (TOML). Regenerate inputs and rebuild after editing.
 [paths]
 func_dir = "4_potential/fit"
 nscf_dir = "5_wannier"
@@ -34,9 +32,9 @@ axial = 1.51
 fac = 138.999030041732
 a0 = 13.17139000 # Bohr
 celldm3 = 2.85
-ef = -1.6875 # eV, original interpolation convention
+ef = -1.6875 # eV
 eta = 0.002
-broadening = [0.002] # eV; supply the intended list for your data
+broadening = [0.002] # eV
 selected_eta = 1
 
 [potential]

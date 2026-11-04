@@ -250,7 +250,7 @@ def rebuild():
     assert np.max(abs(raw/np.array([m['pairs']['potential']['denominator'] for m in manifests])[:,None]-actual)) < 1e-14
     assert np.max(abs(anchor-1)) < 1e-10
     no_sd = np.array([r[0] != 'sd' for r in rows])
-    result = {'classification': 'ACTUAL_SPIN_TRAINING_DESIGN_DIAGNOSTIC', 'physical_release': False,
+    result = {'classification': 'ACTUAL_SPIN_TRAINING_DESIGN_DIAGNOSTIC',
               'source_model': str(MODEL), 'snapshot_utc': snapshot['utc'], 'training_rows': len(rows),
               'endpoints': len(evidence), 'fields': len(snapshot['fields']),
               'nominal': spectrum(np.vstack([nominal, np.ones(14)])),

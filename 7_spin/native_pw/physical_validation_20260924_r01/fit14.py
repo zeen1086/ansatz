@@ -45,12 +45,12 @@ def blind_design():
             tests.append(np.array([int(j==site) for j in c.site_map('sd',tile)]))
     coverage=np.array(tests)@null
     assert np.linalg.matrix_rank(coverage,tol=1e-8)==4
-    return {'refs':[0,1],'angles_degrees':[-PARAM['angle_degrees'],PARAM['angle_degrees']],'old_nullspace_coverage_rank':4,'criteria':{'potential_response_relative_L2':.02,'density_response_relative_L2':.02},'role':'field-level independent predictions; downstream torque acceptance still required','physical_release':False}
+    return {'refs':[0,1],'angles_degrees':[-PARAM['angle_degrees'],PARAM['angle_degrees']],'old_nullspace_coverage_rank':4,'criteria':{'potential_response_relative_L2':.02,'density_response_relative_L2':.02},'role':'field-level independent predictions; downstream torque acceptance still required'}
 
 def fit():
     out=R/'fit14';out.mkdir()
     x,inverse=design();singular=np.linalg.svd(np.vstack([x,np.ones(14)]),compute_uv=False)
-    write(out/'FROZEN_DESIGN.json',{'physical_release':False,'rank_with_FM':14,'singular_values':singular.tolist(),'condition':float(singular[0]/singular[-1]),'blind_design':blind_design()})
+    write(out/'FROZEN_DESIGN.json',{'rank_with_FM':14,'singular_values':singular.tolist(),'condition':float(singular[0]/singular[-1]),'blind_design':blind_design()})
     np.save(out/'actual_design.npy',x)
     metrics={}
     for kind in ('potential','density'):
@@ -72,13 +72,13 @@ def fit():
             assert np.max(abs(coef.sum(axis=1)-ref[:,3]))<1e-10
             k[ids]=coef;err=coef@x.T-y;rowrss+=np.sum(err*err,axis=0);rowyn+=np.sum(y*y,axis=0)
         k.flush();fm.flush();metrics[kind]={'relative_L2':float(np.sqrt(rowrss.sum()/rowyn.sum())),'row_relative_L2':np.sqrt(rowrss/np.maximum(rowyn,1e-300)).tolist()}
-    write(out/'RESULT.json',{'physical_release':False,'preliminary':(R/'DEADLINE_POLICY.json').exists(),'rank_with_FM':14,'metrics':metrics,'scope':'full14 actual-coordinate fitted candidate; blind data excluded; no production interface serialized'})
+    write(out/'RESULT.json',{'preliminary':(R/'DEADLINE_POLICY.json').exists(),'rank_with_FM':14,'metrics':metrics,'scope':'full14 actual-coordinate fitted candidate; blind data excluded; no production interface serialized'})
     print('FULL14_FIT_COMPLETE',flush=True)
 
 def validate():
     assert (R/'fit14/RESULT.json').exists()
     pairs={site:[state('blind'+str(site)+'_'+side) for side in ('plus','minus')] for site in (0,1)}
-    result={'physical_release':False,'preliminary':(R/'DEADLINE_POLICY.json').exists(),'field_only':True,'blind_design':blind_design(),'metrics':{}}
+    result={'preliminary':(R/'DEADLINE_POLICY.json').exists(),'field_only':True,'blind_design':blind_design(),'metrics':{}}
     for kind in ('potential','density'):
         suffix='RAW_DENSITY.bin' if kind=='density' else 'FROZEN_HXC.bin'
         k=np.load(R/'fit14'/(kind+'_kernel.npy'),mmap_mode='r');rss=yn=0.

@@ -150,7 +150,7 @@ def combine(cell, sources):
     phi = {key: (cases['plus'][key] - cases['minus'][key]) / (2 * math.radians(ANGLE))
            for key in cases['plus']}
     _, _, a = geometry(cell)
-    out = {'classification': 'NATIVE_FULL_K_FOLDED_TORQUE_COLUMN', 'physical_release': False,
+    out = {'classification': 'NATIVE_FULL_K_FOLDED_TORQUE_COLUMN',
            'cell': cell, 'angle_degrees': ANGLE, 'perturbed_site': 0, 'rotation_axis': AXIS,
            'site_order': [[*tile, sublattice] for tile in model.CELLS[cell][1] for sublattice in (0, 1)],
            'electronic_k_mesh': [12, 4, 1] if cell == 's13' else [7, 7, 1],
@@ -259,7 +259,7 @@ def main():
                       'joint_minus_old_mapping_Jspin_meV': (j - old_j).tolist(),
                       'note': 'Large-angle energies here are spin-model predictions, not new ansatz or DFT energy scans.'}
     out = {'classification': 'WAITING_FOR_CELL_TORQUES' if missing else 'THREE_CELL_CONDITIONAL_J123',
-           'physical_release': False, 'missing_files': missing, 'cells': per_cell, 'joint_J123': joint,
+           'missing_files': missing, 'cells': per_cell, 'joint_J123': joint,
            '2x2_conditional_comparison': comparison,
            'conventions': 'Phi_tau=dtau/dtheta=-C2; radians; H=+sum_unordered Jspin Si.Sj, S=1.5; Jspin=-JUnit/2.25.',
            'fit_policy': 'Equal weight per offsite response, 15 rows when complete; onsite response tests the sum, not an extra fitted row.',

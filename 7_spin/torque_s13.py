@@ -90,12 +90,12 @@ def prepare():
         assert np.allclose(axes, np.tile(shared.a.AXIS, (6, 1)), atol=1e-12, rtol=0)
         rows[side] = {'moments': spins.tolist(), 'coordinate_source': str(src),
                       'note': 'Reuse specified unit-spin geometry only; old model torque is not reused'}
-    reader.write_json(R / 'REFERENCE.json', {'rows': rows, 'physical_release': False})
-    reader.write_json(R / 'fits/RESULT.json', {'rank_source': 14, 'physical_release': False,
+    reader.write_json(R / 'REFERENCE.json', {'rows': rows})
+    reader.write_json(R / 'fits/RESULT.json', {'rank_source': 14,
                       'method': 'Exact s13 fold of current actual-direction full14; no refit'})
     reader.write_json(R / 'INPUTS.json', {'current_kernel_sha256': pins, 'new_scf': False,
                       'endpoints': 2, 'spin_step_degrees': PARAM['angle_degrees'], 'WFC_seed': str(WFC),
-                      'shape': SHAPE, 'k_mesh': [12, 4, 1], 'physical_release': False})
+                      'shape': SHAPE, 'k_mesh': [12, 4, 1]})
     text = bands_input(Path('/tmp/s13_input_check/tmp/CrI3.save'))
     assert "calculation='bands'" in text and "startingwfc='file'" in text and "constrained_magnetization='none'" in text
     assert text.split('CELL_PARAMETERS')[1] == source.read_text().split('CELL_PARAMETERS')[1]
@@ -169,7 +169,7 @@ def analyze():
     # The conditional fit is an output; downstream models are configured separately.
     valid = all(row['relative_residual'] <= PARAM['cell_residual_limit'] for row in result['cell_fits'])
     reader.write_json(output / 'STATUS.json', {'status': 'THREE_CELL_FIT_COMPLETE' if valid else 'THREE_CELL_RESPONSE_MISMATCH',
-                      'response_criterion_passed': valid, 'physical_release': False,
+                      'response_criterion_passed': valid,
                       'criterion': f"each cell offsite response residual <= {PARAM['cell_residual_limit']}; not independent DFT acceptance"})
     print(json.dumps({'J_meV': result['J_meV'], 'cell_fits': result['cell_fits'], 'response_criterion_passed': valid}, indent=2), flush=True)
 

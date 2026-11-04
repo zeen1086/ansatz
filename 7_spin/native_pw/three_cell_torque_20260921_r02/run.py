@@ -193,7 +193,7 @@ def execute(cell, case):
         rows = contractions(field_dir, rho)
         electronic = band_data(save / 'data-file-schema.xml', nk)
         energy = json.loads((field_dir / 'ENERGY.json').read_text())
-        result = {'physical_release': False, 'cell': cell, 'case': case,
+        result = {'cell': cell, 'case': case,
                   'classification': 'FULL_K_NATIVE_SERIALIZED_MAGNETIC_TANGENT_CONSISTENT_TOTAL_TORQUE',
                   'angle_deg': math.degrees(angle), 'perturbed_site': 0,
                   'spins': spins.tolist(), 'axes': axes.tolist(), 'grid': list(shape), 'candidate_model': str(g.R),

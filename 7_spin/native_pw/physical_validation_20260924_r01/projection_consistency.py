@@ -12,7 +12,7 @@ spec=importlib.util.spec_from_file_location('resample',R.parent/'sd_fft_repair_2
 s=importlib.util.module_from_spec(spec);spec.loader.exec_module(s)
 
 def main():
- result={'physical_release':False,'diagnostic_only':True,'contract':'Use the held-out charge-density physical-G set already used by finish_sd; no fitted mask or scale','fields':{}}
+ result={'diagnostic_only':True,'contract':'Use the held-out charge-density physical-G set already used by finish_sd; no fitted mask or scale','fields':{}}
  previous=json.loads((R/'BLIND_FIELD_RESULT.json').read_text())
  for kind in ('potential','density'):
   k=np.load(R/'fit14'/(kind+'_kernel.npy'),mmap_mode='r');suffix='FROZEN_HXC.bin' if kind=='potential' else 'RAW_DENSITY.bin'
