@@ -40,12 +40,12 @@ program make_w_density
   end if
   if (nspin < 1) stop 'nspin must be positive'
 
-  open(unit=101, file='../../1_scf/V_HYC_dp', access='sequential',             &
+  open(unit=101, file=p_scf_dir//'V_HYC_dp', access='sequential',             &
     action='read', status='old', form='unformatted')
   read(101) nx, ny, nz
   close(101)
 
-  open(unit=102, file='../../1_scf/V_QE', access='sequential', action='read', &
+  open(unit=102, file=p_scf_dir//'V_QE', access='sequential', action='read', &
     status='old', form='unformatted')
   read(102) fit_nx, fit_ny, fit_nz
   close(102)

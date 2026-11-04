@@ -138,9 +138,9 @@ contains
     default_x = gx + 1
     default_y = gy + 1
     default_z = gz + 1
-    inquire(file='../../1_scf/V_HYC_dp', exist=exists)
+    inquire(file=p_scf_dir//'V_HYC_dp', exist=exists)
     if (exists) then
-      open(unit=301, file='../../1_scf/V_HYC_dp', access='sequential',           &
+      open(unit=301, file=p_scf_dir//'V_HYC_dp', access='sequential',           &
         action='read', status='old', form='unformatted')
       read(301) default_x, default_y, default_z
       close(301)

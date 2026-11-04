@@ -1,41 +1,40 @@
 # QE 7.6 modifications
 
-Source replacements for the official [Quantum ESPRESSO 7.6](https://gitlab.com/QEF/q-e/-/archive/qe-7.6/q-e-qe-7.6.tar.gz) tree, taken from
-the magnetic and nonmagnetic builds on ISSP.
+Source overlays for the official [QE 7.6 tag](https://gitlab.com/QEF/q-e/-/tree/qe-7.6),
+based on the magnetic and nonmagnetic sources used on ISSP.
 
-- `magnetic/`: spin-direction constraints and the `pp_exam.x` potential exporter.
-- `nonmagnetic/`: the same base plus a cached scalar-potential reader for
-  `pw_no_mag.x`. It reads the first channel of `V_HYC_dp` and removes the local
-  magnetic field in each Hamiltonian update.
+- `common/`: direction constraints, potential export and real-space wavefunction export.
+- `magnetic/`: magnetic build entry point.
+- `nonmagnetic/`: fixed scalar-potential reader, Hamiltonian update and build entry point.
 
-Paths inside each directory follow the QE source layout. Start with two complete
-QE 7.6 trees, including QE's external dependencies, then copy the corresponding
-replacement files into each tree:
-
-```bash
-cp -R magnetic/. /path/to/qe-7.6-magnetic/
-cp -R nonmagnetic/. /path/to/qe-7.6-nonmagnetic/
-```
-
-After loading Intel MPI/MKL, build from each QE root:
+Start with two clean QE 7.6 trees, including the pinned external dependencies
+(`git clone --branch qe-7.6 --recursive https://gitlab.com/QEF/q-e.git` or the complete release).
+`install.py` verifies the original files against `upstream.json` before copying common and
+variant sources. It rejects modified or incompatible source trees.
 
 ```bash
+python3 install.py magnetic /path/to/qe-7.6-magnetic
+python3 install.py nonmagnetic /path/to/qe-7.6-nonmagnetic
+cd /path/to/qe-7.6-magnetic
 bash HYC/build_mpi_mkl.sh
-source HYC/mpi_env.sh
+# Repeat the build in the nonmagnetic tree.
 ```
 
-The magnetic build provides `pw.x` and `pp_exam.x`; the nonmagnetic build provides
-`pw.x` and its `pw_no_mag.x` alias. Use the magnetic build for SCF/potential export
-and the nonmagnetic build for the fixed-scalar band/Wannier stages.
+Load Intel MPI/MKL first. The helper builds `pw.x`, `pp_exam.x`, `bands.x`,
+`pw2wannier90.x`, `wfck2r.x` and the other PP tools, using sequential MKL.
+The nonmagnetic tree also provides `bin/pw_no_mag.x`. Source `HYC/mpi_env.sh` before MPI runs.
+Use the magnetic build for magnetic SCF/export and the nonmagnetic build for the fixed-scalar stages.
 
-Export with `pp_exam.x < print_V.in`. The workflow's generated `print_V.in`
-enables `write_v_qe` for the potential-fitting stage. `V_HYC_dp` contains a grid
-header and four float64 channels `(V0,Bx,By,Bz)` in Ry, stored with Fortran record
-markers and x-fast indexing. The nonmagnetic executable requires this file in
-its working directory and checks its grid against the QE state.
+`pp_exam.x < print_V.in` writes `V_HYC_dp`: a three-int grid record followed by float64
+`(V0,Bx,By,Bz)` in Ry, x fastest. The generated input enables `write_v_qe` for fitting.
+The nonmagnetic executable requires a matching `V_HYC_dp` in its working directory;
+it reads the scalar channel once and reapplies zero local magnetic field at each update.
 
-For directional constraints, set `constrained_magnetization='atomic vector direction'`
-and select species with `constrain_species` in `&SYSTEM`. The mode fixes the
-target direction while allowing the moment magnitude to vary.
+The added `wfck2r.x` option `write_hyc=true` writes sequential complex128 records
+`WFN/wfn_k*_b*_vec_dp`, with physical FFT-grid points (padding removed) and spinor components.
+The original direct-access and Octave modes remain available with `write_hyc=false`.
+Use the workflow's generated `wfck2r.in` for Wannier conversion.
 
-The original QE copyright notices and [GPL license](License) are retained.
+For direction constraints, set `constrained_magnetization='atomic vector direction'`
+and select species with `constrain_species` in `&SYSTEM`. Direction is constrained;
+moment magnitude remains free. The original copyright notices and [GPL license](License) are retained.

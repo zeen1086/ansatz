@@ -1,22 +1,15 @@
-   #restart = plot
-   #restart = wannierise
-   write_hr = true
-   write_rmn = false
-   write_bvec = false
-   write_u_matrices = true
-   spinors = false
-   spin_decomp = false
-   kpath = true
-   kpath_task = bands
-   #kpath_bands_colour = spin
-   guiding_centres= true
-   use_ws_distance = false
-   #translate_home_cell =true
+write_hr = true
+write_rmn = false
+write_bvec = false
+write_u_matrices = true
+spinors = ${spinors}
+spin_decomp = false
+kpath = true
+kpath_task = bands
+guiding_centres= true
+use_ws_distance = false
 
 
-   #num_no_guide_iter =50
-   #dis_win_min=7.0
-   #dis_win_max=12.0
 dis_froz_min = ${dis_froz_min}
 dis_froz_max = ${dis_froz_max}
 exclude_bands = ${exclude_bands}
@@ -25,12 +18,7 @@ dis_conv_tol = ${dis_conv_tol}
 num_wann = ${nwan}
 num_bands = ${num_bands}
 num_iter = ${num_iter}
-   #dis_mix_ratio=0.2
-   #num_guide_cycles=3
-   #site_symmetry=.true.
-   #symmetrize_eps = 1d-5
 
-#kmesh_tol=0.00000006001
 
 begin projections
 Cr: d:x=0.5,0.866025,0.0

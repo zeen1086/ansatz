@@ -2,7 +2,7 @@ program R_sym
   use parameter_mod
         ! This code creates the mapping from position index to 3D vector
         ! crystal symmetry operation can be included,
-        ! a rotation symmetry making z -> -z in presented here 
+        ! a rotation symmetry making z -> -z in presented here
 
         ! Note: Rather than using full BZ, we just take a relavent subspace
         !       countted as ni-points
@@ -22,9 +22,8 @@ program R_sym
         real(kind(0d0)),allocatable  :: B_general_old(:,:,:,:)
         real(kind(0d0)),allocatable  :: B_general(:,:,:,:)
 
-
   n_spinor=p_split_nspinor
-  open(unit=101,file='../1_scf/V_HYC_dp',access='sequential',action='read'&
+  open(unit=101,file=p_scf_dir//'V_HYC_dp',access='sequential',action='read'&
                 &,form='unformatted')
         read(101) nx,ny,nz
         print*,'nx ny nz=',nx,ny,nz
@@ -43,8 +42,7 @@ program R_sym
   enddo
   enddo
 
-
-  open(unit=101,file='./R_vec',action='write'&
+  open(unit=101,file=p_func_dir//'R_vec',action='write'&
                 &,status='replace',form='unformatted')
         write(101) ni
         write(101) vec
@@ -53,11 +51,10 @@ program R_sym
   allocate(B_general_old((nx+1)*(ny+1)*(nz+1),3,n_spinor,3))
   allocate(B_general(ni,3,n_spinor,3))
 
-
-  open(unit=102,file='V_func_tmp_tmp',action='read',access='sequential',form='unformatted')
-        read(102) 
-        read(102) 
-        read(102) 
+  open(unit=102,file=p_func_dir//'V_func_tmp_tmp',action='read',access='sequential',form='unformatted')
+        read(102)
+        read(102)
+        read(102)
         read(102) B_general_old
         read(102)
   close(102)
@@ -72,21 +69,13 @@ program R_sym
   enddo
   enddo
 
-
-
-
-open(unit=102,file='V_func_tmp',action='write',access='append',status='replace',form='unformatted')
-        write(102) 
-        write(102) 
-        write(102) 
+open(unit=102,file=p_func_dir//'V_func_tmp',action='write',access='append',status='replace',form='unformatted')
+        write(102)
+        write(102)
+        write(102)
         write(102) B_general
-        write(102) 
+        write(102)
 close(102)
-
-
-
-
-
 
 contains
 
@@ -101,10 +90,5 @@ IF ((in_int .LT. 10000) .and. (in_int .GE. 1000) )  WRITE(out_char,'(I4)')in_int
 IF ((in_int .LT. 100000) .and. (in_int .GE. 10000) )WRITE(out_char,'(I5)')in_int
 
 end subroutine int2char
-
-
-
-
-
 
 end program

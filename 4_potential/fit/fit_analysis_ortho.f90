@@ -7,15 +7,10 @@ program fit_analysis_ortho
         ! Orthogonal-basis diagnostic for files written by fit_com_ortho.f90.
         !
         ! The file format stores raw coefficients:
-        !   V = K0_raw * S + K1_raw * (chi*S)
         !
         ! fit_com_ortho.f90 fitted instead:
-        !   M_ortho = M_raw - L * P
-        !   V = K0_ortho * L + K1_ortho * M_ortho
         !
         ! Therefore:
-        !   K1_ortho = K1_raw
-        !   K0_ortho = K0_raw + K1_raw * P^T
         !
         ! This program reconstructs P from the training spins, transforms the
         ! stored coefficients back to the orthogonal basis, and reports the
@@ -242,7 +237,7 @@ subroutine read_grid(grid_nx, grid_ny, grid_nz, grid_size)
         implicit none
         integer, intent(out) :: grid_nx, grid_ny, grid_nz, grid_size
 
-        open(unit=101,file='../../1_scf/V_QE',access='sequential',action='read',     &
+        open(unit=101,file=p_scf_dir//'V_QE',access='sequential',action='read',     &
                 status='old',form='unformatted')
         read(101) grid_nx, grid_ny, grid_nz
         close(101)

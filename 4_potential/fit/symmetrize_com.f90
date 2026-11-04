@@ -168,7 +168,6 @@ contains
     end if
   end subroutine validate_header
 
-
   subroutine read_com_file(path, file_magic, grid_nx, grid_ny, grid_nz,          &
       grid_size, spinor_count, feature_count, file_count, kind_count, n_iter,   &
       nonconv, l1_rel, l2_rel, l1_abs, l2_abs, conv_tol, linear_part, mod_part)
@@ -195,7 +194,6 @@ contains
     close(101)
   end subroutine read_com_file
 
-
   subroutine write_com_file(path, file_magic, grid_nx, grid_ny, grid_nz,         &
       grid_size, spinor_count, feature_count, file_count, kind_count, n_iter,   &
       nonconv, l1_rel, l2_rel, l1_abs, l2_abs, conv_tol, linear_part, mod_part)
@@ -221,7 +219,6 @@ contains
     close(102)
   end subroutine write_com_file
 
-
   subroutine build_channel_positions(grid_nx, grid_ny, grid_nz, positions)
     implicit none
     integer, intent(in) :: grid_nx, grid_ny, grid_nz
@@ -238,7 +235,6 @@ contains
     positions(:,2) = positions(:,2) * real(grid_ny,dp)
     positions(:,3) = positions(:,3) * real(grid_nz,dp)
   end subroutine build_channel_positions
-
 
   subroutine apply_operation(operation_name, grid_nx, grid_ny, grid_nz,          &
       grid_size, grid_vectors, positions, center, transform, mask, linear_part, &
@@ -374,7 +370,6 @@ contains
     deallocate(old_linear, old_mod, tmp_linear, tmp_mod, degree_linear, degree_mod)
   end subroutine apply_operation
 
-
   subroutine print_operation_diagnostics(operation_name, pt_map,                &
       mapped_positions, mapped_points, linear_source_active,                    &
       linear_target_active, linear_active_pairs, mod_source_active,             &
@@ -415,7 +410,6 @@ contains
     end do
   end subroutine print_operation_diagnostics
 
-
   integer function index_from_grid(ix, iy, iz, grid_nx, grid_ny)
     implicit none
     integer, intent(in) :: ix, iy, iz, grid_nx, grid_ny
@@ -423,7 +417,6 @@ contains
     index_from_grid = 1 + ix + (grid_nx + 1) * iy                               &
       + (grid_nx + 1) * (grid_ny + 1) * iz
   end function index_from_grid
-
 
   subroutine write_report(input_path, output_path, is_inplace, grid_nx, grid_ny,&
       grid_nz, grid_size, linear_before, mod_before, linear_change, mod_change, &
@@ -473,7 +466,6 @@ contains
     end do
     close(103)
   end subroutine write_report
-
 
   real(dp) function relative_error(squared_error, squared_target)
     implicit none

@@ -2,7 +2,6 @@
 """Generate QE/Wannier inputs and the Fortran module from parameter; run no jobs."""
 from pathlib import Path
 import argparse
-import hashlib
 import math
 from string import Template
 
@@ -11,6 +10,8 @@ from parameters import ROOT, fortran_module, load
 
 def render(values: dict) -> dict[Path, str]:
     p = dict(values)
+    p["spinors"] = "true" if values["nspin"] == 2 else "false"
+    p["noncolin"] = ".true." if values["nspin"] == 2 else ".false."
     p["write_v_qe"] = ".true." if values["write_v_qe"] else ".false."
     p["structure"] = (ROOT / "1_scf/structure.in").read_text().strip()
     p["pseudo_dir"] = repr(p["pseudo_dir"])
@@ -33,27 +34,27 @@ def render(values: dict) -> dict[Path, str]:
     return outputs
 
 
-def configure() -> None:
+def configure(output_dir: Path = ROOT) -> None:
     values = load()
     outputs = render(values)
+    if output_dir != ROOT:
+        outputs = {output_dir / path.relative_to(ROOT): content for path, content in outputs.items()}
     for path in outputs:
         if path.exists() and not path.read_text().startswith(("! Generated", "# Generated")):
             raise FileExistsError(f"refusing to overwrite an unmanaged file: {path}")
     for path, content in outputs.items():
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
-    # The fingerprint also catches edits to an alternate ANSATZ_PARAMETER file.
-    fingerprint = hashlib.sha256(fortran_module(values).encode()).hexdigest()
-    (ROOT / ".build/configuration.sha256").write_text(fingerprint + "\n")
     print(f"Generated {len(outputs)} files; no calculations or submissions performed.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="validate configuration and templates without writing")
+    parser.add_argument("--output-dir", type=Path, default=ROOT, help="generate inputs in an isolated case directory")
     args = parser.parse_args()
     if args.check:
         render(load())
         print("PASS: parameter and all input templates")
     else:
-        configure()
+        configure(args.output_dir.resolve())

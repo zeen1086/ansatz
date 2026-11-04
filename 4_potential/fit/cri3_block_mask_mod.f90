@@ -28,7 +28,6 @@ contains
       grid_size, max(grid_nx,1), max(grid_ny,1), max(grid_nz,1), mask)
   end subroutine make_feature_block_mask
 
-
   subroutine make_compact_feature_block_mask(nx_points, ny_points, nz_points,   &
       grid_size, mask)
     implicit none
@@ -39,7 +38,6 @@ contains
       grid_size, max(nx_points - 1,1), max(ny_points - 1,1),                  &
       max(nz_points - 1,1), mask)
   end subroutine make_compact_feature_block_mask
-
 
   subroutine make_orbit_closed_block_mask(nx_points, ny_points, nz_points,     &
       grid_size, denom_x, denom_y, denom_z, mask)
@@ -75,7 +73,6 @@ contains
     deallocate(blocked)
   end subroutine make_orbit_closed_block_mask
 
-
   subroutine seed_block_channels_for_point(ix, iy, denom_x, denom_y,            &
       blocked_row)
     implicit none
@@ -90,7 +87,6 @@ contains
 
   end subroutine seed_block_channels_for_point
 
-
   logical function inside_seed_yellow_region(ix, iy, denom_x, denom_y)
     implicit none
     integer, intent(in) :: ix, iy, denom_x, denom_y
@@ -100,7 +96,6 @@ contains
     y_frac = real(iy,dp) / real(denom_y,dp)
     inside_seed_yellow_region = y_frac > x_frac
   end function inside_seed_yellow_region
-
 
   subroutine close_seed_under_point_group(nx_points, ny_points, nz_points,      &
       denom_x, denom_y, denom_z, blocked)
@@ -149,7 +144,6 @@ contains
 
     stop 'block mask point-group closure did not converge'
   end subroutine close_seed_under_point_group
-
 
   subroutine close_under_operation(nx_points, ny_points, nz_points, denom_x,    &
       denom_y, denom_z, origin, transform, blocked, changed)
@@ -216,7 +210,6 @@ contains
     deallocate(old_blocked)
   end subroutine close_under_operation
 
-
   subroutine build_channel_positions(denom_x, denom_y, denom_z, positions)
     implicit none
     integer, intent(in) :: denom_x, denom_y, denom_z
@@ -233,7 +226,6 @@ contains
     positions(:,2) = positions(:,2) * real(denom_y,dp)
     positions(:,3) = positions(:,3) * real(denom_z,dp)
   end subroutine build_channel_positions
-
 
   subroutine build_channel_map(origin, transform, positions, pt_map)
     implicit none
@@ -255,7 +247,6 @@ contains
     end do
   end subroutine build_channel_map
 
-
   subroutine c3_plus_transform(transform)
     implicit none
     real(dp), intent(out) :: transform(3,3)
@@ -264,7 +255,6 @@ contains
     transform(2,:) = (/-1d0, -1d0, 0d0/)
     transform(3,:) = (/0d0, 0d0, 1d0/)
   end subroutine c3_plus_transform
-
 
   subroutine c3_minus_transform(transform)
     implicit none
@@ -275,7 +265,6 @@ contains
     transform(3,:) = (/0d0, 0d0, 1d0/)
   end subroutine c3_minus_transform
 
-
   subroutine mirror_transform(transform)
     implicit none
     real(dp), intent(out) :: transform(3,3)
@@ -285,14 +274,12 @@ contains
     transform(3,:) = (/0d0, 0d0, 1d0/)
   end subroutine mirror_transform
 
-
   integer function index_from_grid(ix, iy, iz, nx_points, ny_points)
     implicit none
     integer, intent(in) :: ix, iy, iz, nx_points, ny_points
 
     index_from_grid = 1 + ix + nx_points * iy + nx_points * ny_points * iz
   end function index_from_grid
-
 
   subroutine block_channel_pair(blocked_row, channel_a, channel_b)
     implicit none
@@ -315,7 +302,6 @@ contains
     coef(:,:) = coef(:,:) * mask(:,:)
   end subroutine apply_feature_block_mask
 
-
   subroutine apply_com_block_mask(linear_part, mod_part, mask)
     implicit none
     real(dp), intent(inout) :: linear_part(:,:), mod_part(:,:)
@@ -334,14 +320,12 @@ contains
     end do
   end subroutine apply_com_block_mask
 
-
   integer function count_blocked_features(mask)
     implicit none
     real(dp), intent(in) :: mask(:,:)
 
     count_blocked_features = count(mask < 0.5d0)
   end function count_blocked_features
-
 
   subroutine make_feature_active_fraction(mask, active_fraction)
     implicit none
@@ -355,7 +339,6 @@ contains
       active_fraction(feature) = sum(mask(:,feature)) / real(size(mask,1),dp)
     end do
   end subroutine make_feature_active_fraction
-
 
   real(dp) function masked_absmax_rhs(rhs, mask)
     implicit none

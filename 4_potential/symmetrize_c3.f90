@@ -61,7 +61,7 @@ contains
 subroutine read_grid_shape(nx, ny, nz)
         integer, intent(out) :: nx, ny, nz
 
-        open(unit=101, file='../1_scf/V_QE', action='read', access='sequential', &
+        open(unit=101, file=p_scf_dir//'V_QE', action='read', access='sequential', &
                 form='unformatted', status='old')
         read(101) nx, ny, nz
         close(101)

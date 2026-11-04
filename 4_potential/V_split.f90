@@ -1,12 +1,5 @@
 program extract
   use parameter_mod
-        !! This code convert the V_vrs from QE to 
-        !! our format in the real-space index of the subspace
-        !! chosen by R_sym.f90, with symmetry operation.
-
-        !! Note that the details need to be modify for other symmetry operation
-        !! Note that some variables may looks redundant.
-        !! They are kept for future extension.
 
         implicit none
         integer :: nx,ny,nz,n_file,i_file,i_iter,n_iter,i,j
@@ -53,14 +46,11 @@ program extract
         enddo
         close(101)
 
-        
-
         super_x=p_split_super_x
         super_y=p_split_super_y
         super_z=p_split_super_z
         allocate(spin(n_dep*3))
         allocate(to_write(n_dep,3))
-
 
         open(unit=101,file='./V_HYC_dp',access='sequential',action='read'&
                 &,form='unformatted')
@@ -70,7 +60,6 @@ program extract
                 allocate(V1((nx/super_x+1)*(ny/super_y+1)*(nz/super_z+1),4))
                 read(101) read_V
                 close(101)
-
 
         i_file=1
 
@@ -100,19 +89,13 @@ program extract
                         write(103) V1
                 close(103)
 
-
                 if(iy_site .eq. 0) then
-                        to_write(1,:)= spin_all(1,:)   ! 
-                        to_write(2,:)= spin_all(2,:)   ! 
+                        to_write(1,:)= spin_all(1,:)   !
+                        to_write(2,:)= spin_all(2,:)   !
                 endif
-
-
 
                 call int2char(n_dep*3,nspinor_char)
                 formatname='('//trim(nspinor_char)//'F12.6)'
-
-
-                !write(202,formatname) (to_write(i,:),i=1,n_dep)
 
                 do i=1,n_dep
 
@@ -124,14 +107,10 @@ program extract
 
                 i_file=i_file+1
 
-
         enddo
         enddo
         enddo
         close(203)
-
-
-
 
 contains
 

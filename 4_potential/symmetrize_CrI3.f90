@@ -34,7 +34,7 @@ program symmetrize_CrI3
                 sym_cart(:,:,isym) = matmul(cart_basis, matmul(sym_crys(:,:,isym), inv_cart_basis))
         enddo
 
-        open(unit=101, file='../1_scf/V_HYC_dp', access='sequential', action='read', &
+        open(unit=101, file=p_scf_dir//'V_HYC_dp', access='sequential', action='read', &
              form='unformatted', status='old')
                 read(101) nx, ny, nz
         close(101)

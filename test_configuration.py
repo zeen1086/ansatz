@@ -53,6 +53,9 @@ class ConfigurationTests(unittest.TestCase):
         krows = output[ROOT / "5_wannier/nscf.in"].split("K_POINTS crystal\n")[1].splitlines()
         self.assertEqual(int(krows[0]), 72)
         self.assertAlmostEqual(sum(float(row.split()[3]) for row in krows[1:]), 1)
+        spinor = render(self.altered("nspin = 1", "nspin = 2"))
+        self.assertIn("spinors = true", spinor[ROOT / "5_wannier/CrI3.win"])
+        self.assertIn("noncolin=.true.", spinor[ROOT / "5_wannier/nscf.in"])
         changed = render(self.altered("a0 = 13.17139000", "a0 = 15.0"))
         self.assertIn("celldm(1)=15.0", changed[ROOT / "2_band/band.in"])
         self.assertNotEqual(changed[ROOT / "5_wannier/CrI3.win"], output[ROOT / "5_wannier/CrI3.win"])
@@ -111,14 +114,23 @@ end program
                 run = subprocess.run([str(work/"probe"), argument], capture_output=True)
                 self.assertNotEqual(run.returncode, 0)
 
+    @unittest.skipUnless(shutil.which("gfortran"), "gfortran is unavailable")
     def test_small_fortran_record_kernels(self):
         names = ("4_potential/make_R_vec.x", "4_potential/V_split.x", "5_wannier/make_wan/make_w_density.x")
-        if not all((ROOT/name).exists() for name in names):
-            self.skipTest("build make_R_vec, V_split and make_w_density to run record-kernel checks")
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
             scf, potential, wan = base/"1_scf", base/"4_potential", base/"5_wannier/make_wan"
             for path in (scf, potential, wan): path.mkdir(parents=True)
+            p = load()
+            p.update(scf_dir=str(scf), func_dir=str(potential))
+            (base/"parameter_mod.f90").write_text(fortran_module(p))
+            binaries = []
+            for name in names:
+                binary = base/Path(name).name
+                subprocess.run(["gfortran", "-ffree-line-length-none", str(base/"parameter_mod.f90"),
+                                str(ROOT/Path(name).with_suffix(".f90")), "-o", str(binary)], cwd=base, check=True)
+                binaries.append(binary)
+
             nx, ny, nz = 2, 2, 3
             grid = struct.pack("<3i", nx, ny, nz)
             values = np.arange(nx*ny*nz*4, dtype="<f8").reshape((-1,4), order="F")
@@ -126,14 +138,14 @@ end program
             write_records(scf/"V_QE", grid)
             extended = np.arange((nx+1)*(ny+1)*(nz+1)*18, dtype="<f8").reshape((-1,3,2,3), order="F")
             write_records(potential/"V_func_tmp_tmp", b"", b"", b"", extended.tobytes(order="F"), b"")
-            subprocess.run([str(ROOT/names[0])], cwd=potential, check=True, stdout=subprocess.DEVNULL)
+            subprocess.run([str(binaries[0])], cwd=potential, check=True, stdout=subprocess.DEVNULL)
             got = np.frombuffer(read_records(potential/"V_func_tmp")[3], dtype="<f8").reshape((-1,3,2,3), order="F")
             expected = extended.reshape((nx+1,ny+1,nz+1,3,2,3), order="F")[:nx,:ny,:nz].reshape((-1,3,2,3), order="F")
             np.testing.assert_array_equal(got, expected)
             shutil.copyfile(scf/"V_HYC_dp", potential/"V_HYC_dp")
             (potential/"super_atom").write_text("".join(f"{'Cr':14s}{0.:20.10f}{0.:20.10f}{0.:20.10f}\n" for _ in range(2)))
             (potential/"polar2").write_text("3 0 0\n3 180 0\n")
-            subprocess.run([str(ROOT/names[1])], cwd=potential, check=True, stdout=subprocess.DEVNULL)
+            subprocess.run([str(binaries[1])], cwd=potential, check=True, stdout=subprocess.DEVNULL)
             got = np.frombuffer(read_records(potential/"V1")[1], dtype="<f8").reshape((-1,4),order="F")
             ix = [x%nx+nx*(y%ny+ny*(z%nz)) for z in range(nz+1) for y in range(ny+1) for x in range(nx+1)]
             np.testing.assert_array_equal(got, values[ix])
@@ -141,7 +153,7 @@ end program
                 wf = np.full((9,nx*ny*nz,1), complex(band,.5), dtype="<c16")
                 write_records(wan/f"wan_{band}", wf.tobytes(order="F"))
             out = wan/"weight"
-            subprocess.run([str(ROOT/names[2]), str(out)], cwd=wan, check=True, stdout=subprocess.DEVNULL)
+            subprocess.run([str(binaries[2]), str(out)], cwd=wan, check=True, stdout=subprocess.DEVNULL)
             records = read_records(out)
             self.assertTrue(records[0].startswith(b"CRI3_WANNIER_WEIGHT_V1"))
             np.testing.assert_allclose(np.frombuffer(records[3],dtype="<f8"), 1, atol=1e-14)

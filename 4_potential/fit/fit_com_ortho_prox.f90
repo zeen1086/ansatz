@@ -7,16 +7,11 @@ program fitting_compressive_ortho
         use cri3_c3_basis_mod, only: c3_basis_mode, c3_reduced_basis,            &
                 build_c3_reduced_basis, solve_c3_reduced_cd, c3_basis_residual
 
-        ! SU(2)-covariant two-step fit with an orthogonal high-order basis.
         !
         ! Raw features:
-        !   L_a = S_a
-        !   M_a = chi_a S_a
         !
         ! Before fitting K_mod, remove from M its projection onto the linear
         ! subspace:
-        !   M_ortho_a = M_a - sum_b P(b,a) L_b
-        !   P = G_LL^{-1} G_LM
         !
         ! K_mod is fitted in the orthogonal basis.  Final raw K_linear is then
         ! conditionally refitted.  Both written kernels are expanded from the
@@ -214,7 +209,7 @@ subroutine read_grid(grid_nx, grid_ny, grid_nz, grid_size)
         implicit none
         integer, intent(out) :: grid_nx, grid_ny, grid_nz, grid_size
 
-        open(unit=101,file='../../1_scf/V_QE',access='sequential',action='read',     &
+        open(unit=101,file=p_scf_dir//'V_QE',access='sequential',action='read',     &
                 status='old',form='unformatted')
         read(101) grid_nx, grid_ny, grid_nz
         close(101)

@@ -1,14 +1,9 @@
 ! RVR contraction kernel: packed contiguous columns + ZGEMM over grid chunks.
 ! Definition preserved from cal_RVR_split.f90::cal_each_func:
 !
-!   Vpsi_1(ig) = pot1(ig)*ini_wan(jv,ig,2) + pot3(ig)*ini_wan(jv,ig,1)
-!   Vpsi_2(ig) = pot2(ig)*ini_wan(jv,ig,1) - pot3(ig)*ini_wan(jv,ig,2)
-!   RVR(i,j)   = sum_ig conjg(fin_wan(iv,ig,1))*Vpsi_1(ig)
 !              + sum_ig conjg(fin_wan(iv,ig,2))*Vpsi_2(ig)
-!   pot1 = B1 - i B2,  pot2 = B1 + i B2,  pot3 = B3
 !
 ! Matrix form: C = A^T Y with the grid/spin index k = 2*(ig-1)+s packed
-! contiguously (A(k,m) = conjg(fin_wan(iv_m,ig,s)), Y(k,n) = Vpsi_s(ig,n)).
 ! Only the k order of the summation changes (BLAS blocking), not the algebra.
 module rvr_kernel_mod
   use parameter_mod
@@ -38,9 +33,7 @@ contains
     t_gemm = 0.0d0
   end subroutine rvr_kernel_reset_timers
 
-
   ! Support lists exactly as in cal_each_func: index d is used only if
-  ! dir_active(d)=1, dir_active(dir_inv(d))=1 and TF(dir_inv(d))=1.
   subroutine build_support(d_ext, dir_active, dir_inv, fin_TF, ini_TF, &
                            n_i, idx_i, n_j, idx_j)
     integer, intent(in)  :: d_ext

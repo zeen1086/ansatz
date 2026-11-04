@@ -1,5 +1,6 @@
 program spin
   use parameter_mod
+  use spin_channels_mod, only: spin_channels, spin_chirality
         implicit none
         integer :: ix,iy,iz,nx,ny,nz,i,is,j,io,js
         integer :: period_x,period_y,period_z,jx,jy,jz
@@ -11,7 +12,7 @@ program spin
         real(kind(0d0)),allocatable        :: spin_vec(:,:,:),off_set(:,:)
         real(kind(0d0))         :: A2B(3),r_tmp(3),Mz
         real(kind(0d0))    :: rad,pi,x,y_com,x_com,theta
-        real(kind(0d0))    :: a(3,3),a0 ,avB(3),avA(3),rrBdr(3),rrAdr(3)     
+        real(kind(0d0))    :: a(3,3),a0 ,avB(3),avA(3),rrBdr(3),rrAdr(3)
         real(kind(0d0)) :: a_next,b_next,s_abs,celldm3
         real(kind(0d0)) ::vec6(6,3),vec3(3),axial
         integer :: int3(3),super_nx,super_ny,super_nz,n_func
@@ -31,6 +32,7 @@ program spin
         real(kind(0d0)) :: r_pos(3), phase_q
 
         integer :: channel_mask(6), channel_source(6)
+        real(8) :: channel_chi(6)
         integer :: target_R(3),target_i_dim,target_j_dim,target_jrept
         integer :: trace_channel,trace_component,trace_index,n_trace_channel
         integer :: src,base_index,mod_index,source_for_trace
@@ -39,7 +41,6 @@ program spin
         complex(kind(0d0)) :: trace_term,trace_sum(12,3)
 
  call EXECUTE_COMMAND_LINE("mkdir -p data_trace")
-
 
 func_dir = p_func_dir
 nscf_dir = p_nscf_dir
@@ -92,15 +93,10 @@ print *, 'Trace target R = ',target_R(:)
 print *, 'Trace target matrix element = ',target_i_dim,target_j_dim
 print *, 'Trace target hr index = ',target_jrept
 
-
-
 d_ext=(2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1)
 RVR_dir=p_rvr_dir
 
-
-
 call read_RVR()
-
 
 allocate(coefficient(n_func))
 
@@ -134,65 +130,32 @@ do ix=0,nx-1
 do iy=0,ny-1
 do iz=0,nz-1
         i=1+iz+nz*iy+ny*nz*ix
-        ! print*,i,nx*ny*nz
         coefficient(:)=0.0d0
         do i_dir=1,d_ext
-!                if (.not. all(dir_vec(i_dir,:) .eq. 0)) cycle
                 ini_x=cell(i,1)+dir_vec(i_dir,1)
                 ini_y=cell(i,2)+dir_vec(i_dir,2)
                 ini_z=cell(i,3)+dir_vec(i_dir,3)
-               ! if (.not. (( ini_y .eq. 1  .and.  ini_x .eq. 0) .or.&
-               !         &( ini_y .eq. 0  .and.  ini_x .eq. 1))) cycle
-               ! if (.not. ini_x .eq. 0) cycle
-  !              if (.not. ini_z .eq. 0) cycle
-  !              if (.not. (all(cell(i,:) .eq. (/0,0,0/)) .or.all(cell(i,:) .eq.(/0,3,0/)))) cycle
                 if (.not. (ini_x .ge.0 .and. ini_x/period_x .eq. 0)) cycle
                 if (.not. (ini_y .ge.0 .and. ini_y/period_y .eq. 0)) cycle
                 if (.not. (ini_z .ge.0 .and. ini_z/period_z .eq. 0)) cycle
                 i_locat=1+ini_z+period_z*ini_y+period_z*period_y*ini_x
 
-                ! coefficient(1:3) = spin_vec(i,:,1)  
-                ! coefficient(4:6) = spin_vec(i,:,2)
+                call spin_chirality(spin_vec(i,:,:), channel_chi)
+                call spin_channels(spin_vec(i,:,:), channel_chi, p_channel_mask, &
+                     p_channel_source, p_lambda_high, coefficient)
 
-                coefficient(:)=0.0d0
-                do j=1,6
-                        if (channel_mask(j) .ne. 0) then
-                                src = channel_source(j)
-                                base_index = 1 + (j-1)*3
-                                coefficient(base_index:base_index+2)=&
-                                        &channel_mask(j)*spin_vec(i,1:3,src)
-
-                                if (n_func .eq. 36) then
-                                        chi_mod = local_chi_all(i,src)
-                                        mod_index = 1 + 18 + (j-1)*3
-                                        coefficient(mod_index:mod_index+2)=&
-                                                &channel_mask(j)*chi_mod*spin_vec(i,1:3,src)
-                                endif
-                        endif
-                enddo
-                ! do j=1,6
-                !         coefficient(1+(j-1)*3:j*3)=spin_vec(i,1:3,j)
-                ! enddo
-
-!print*,coefficient(1:27)
-
-                
                 do j_dir=1,nwan_sp*d_ext
                         RVR_tmp(:,j_dir)=matmul(coefficient(:),RVR(:,:,j_dir))
                 enddo
 
-
         do j_dir=1,d_ext
-!if (.not. all(dir_vec(j_dir,:) .eq. 0)) cycle 
-!               if (.not. (dir_vec(j_dir,3) .eq. 0)) cycle
                 fin_x=cell(i,1)+dir_vec(j_dir,1)
                 fin_y=cell(i,2)+dir_vec(j_dir,2)
                 fin_z=cell(i,3)+dir_vec(j_dir,3)
-                !print*,fin_x,fin_y,fin_z
                 if (fin_x .ge. 0) then
                         super_x=fin_x/period_x
                 else
-                        super_x=(fin_x+1)/period_x-1  
+                        super_x=(fin_x+1)/period_x-1
                 endif
                 if (fin_y .ge. 0) then
                         super_y=fin_y/period_y
@@ -204,9 +167,6 @@ do iz=0,nz-1
                 else
                         super_z=(fin_z+1)/period_z-1
                 endif
- 
-
-
 
                 do irept=1,super_nrept
                         if (all((/super_x,super_y,super_z/) .eq. (super_ir_vec(irept,:)))) then
@@ -215,16 +175,10 @@ do iz=0,nz-1
                         endif
                 enddo
 
-
-                
-                !print*,fin_x,fin_y,fin_z,super_x,super_y,super_z,jrept
-
                 jx=fin_x-super_x*period_x
                 jy=fin_y-super_y*period_y
                 jz=fin_z-super_z*period_z
                 j_locat=1+jz+period_z*jy+period_z*period_y*jx
-
-       ! print*,j_locat
 
         do iwan=wan_min,wan_max
         do jwan=wan_min,wan_max
@@ -254,7 +208,7 @@ do iz=0,nz-1
                         enddo
                         enddo
                 endif
-                
+
                 if (abs(RVR_tmp(iRVR,jRVR)) .lt. 10.0**(-12)) cycle
                 H_sk(i_dim,j_dim,jrept)=H_sk(i_dim,j_dim,jrept)+RVR_tmp(iRVR,jRVR)
 
@@ -262,7 +216,7 @@ do iz=0,nz-1
         enddo
         enddo
         enddo
-        
+
         enddo!j_dir
         enddo!i_dir
 enddo!iz
@@ -287,59 +241,21 @@ write(902,'(3(I0,1X),3(ES24.15,1X))') 0,0,0,&
         &abs(H_sk(target_i_dim,target_j_dim,target_jrept))
 close(902)
 
-
-
-
-
-!do i_dim=11,20
-!        print*,H_sk(11,i_dim,23),H_sk(11+nwan*2/nspin*3,i_dim+nwan*2/nspin*3,23)
 !
-!enddo
-
-!stop
-
-
-
 
 do irept=1,super_nrept
 
-        !if ( all(dir_vec(irept,:) .eq. (/0,0,0/))) then
                 do super_i=0,0
 
-                !H_sk(super_i*192+6*2-1:super_i*192+12*2,super_i*192+6*2-1:super_i*192+12*2,irept)=&
-                !   &H_sk(super_i*192+6*2-1:super_i*192+12*2,super_i*192+6*2-1:super_i*192+12*2,irept)*1.3
-                !H_sk(super_i*192+35*2-1:super_i*192+48*2,super_i*192+35*2-1:super_i*192+48*2,irept)=&
-                !   &H_sk(super_i*192+35*2-1:super_i*192+48*2,super_i*192+35*2-1:super_i*192+48*2,irept)*1.3
-
-
-
-                !do iwan=6,12
-                !    H_sk(super_i*192+iwan*2-1:super_i*192+iwan*2,super_i*192+iwan*2-1:super_i*192+iwan*2,irept)=&
-                !   &H_sk(super_i*192+iwan*2-1:super_i*192+iwan*2,super_i*192+iwan*2-1:super_i*192+iwan*2,irept)*2
-                !enddo
-                !do iwan=35,48
-                !    H_sk(super_i*192+iwan*2-1:super_i*192+iwan*2,super_i*192+iwan*2-1:super_i*192+iwan*2,irept)=&
-                !   &H_sk(super_i*192+iwan*2-1:super_i*192+iwan*2,super_i*192+iwan*2-1:super_i*192+iwan*2,irept)*2
-                !enddo
-
                 enddo
-
-        !endif
-        
-
 
         call int2char(irept,rept_char)
         open(unit=102,file='./data_trace/Hsk_'//trim(rept_char),action='write',access='append'&
                 &,status='replace',form='unformatted')
         write(102)      H_sk(:,:,irept)
         close(102)
-        !if (.not. mod(irept,10) .eq. 8) cycle
         print*,irept,sum(abs(H_sk(:,:,irept))**2),super_ir_vec(irept,:)
 enddo
-
-
-
-
 
 contains
 
@@ -394,7 +310,7 @@ subroutine make_spin()
         deg2rad = pi / 180.0d0
         theta_nu(:) = theta_nu(:) * deg2rad
         phi_nu(:)  = phi_nu(:) * deg2rad
-        mag_moment = 3.0d0
+        mag_moment = p_cr_magnetization
 
         do i_spin=1,n_input
                 physical_spin(i_spin,:) = (/ mag_moment * sin(theta_nu(i_spin))*cos(phi_nu(i_spin)), &
@@ -526,31 +442,6 @@ integer function spin_input_index(ix, iy, iz, atom)
         spin_input_index = atom + 2 * (ix0 + period_x * (iy0 + period_y * iz0))
 end function spin_input_index
 
-real(kind(0d0)) function local_chi_all(i_cell, j_src)
-        implicit none
-        integer, intent(in) :: i_cell, j_src
-        integer :: k, n_count
-        real(kind(0d0)) :: norm_j, norm_k, dot_jk
-
-        local_chi_all = 0.0d0
-        n_count = 0
-
-        norm_j = sqrt(sum(spin_vec(i_cell,:,j_src)**2))
-        if (norm_j .lt. 1.0d-12) return
-
-        do k=1,6
-                if (k .eq. j_src) cycle
-                norm_k = sqrt(sum(spin_vec(i_cell,:,k)**2))
-                if (norm_k .lt. 1.0d-12) cycle
-                dot_jk = sum(spin_vec(i_cell,:,j_src)*spin_vec(i_cell,:,k))     &
-                        / (norm_j*norm_k)
-                local_chi_all = local_chi_all + dot_jk - 1.0d0
-                n_count = n_count + 1
-        enddo
-
-        if (n_count .gt. 0) local_chi_all = local_chi_all / dble(n_count)
-end function local_chi_all
-
 subroutine load_super_size()
         irept=0
         open(unit=102,file=trim(p_super_h_dir)//'ir_vec_HYC',action='read',access='sequential',status='old')
@@ -575,9 +466,7 @@ subroutine load_super_size()
 
 end subroutine
 
-
 subroutine read_RVR()
-
 
         allocate(RVR(n_func,nwan_sp*d_ext,nwan_sp*d_ext))
         allocate(RVR_POT_ave(nwan_sp*d_ext,nwan_sp*d_ext))
@@ -587,9 +476,6 @@ subroutine read_RVR()
                 read(103) RVR
         close(103)
 
-        !open(unit=103,file=trim(RVR_dir)//'./B_ave',action='read',access='sequential',form='unformatted')
-        !        read(103) RVR_POT_ave
-        !close(103)
         RVR_POT_ave(:,:)=0.0d0
 
         allocate(dir_vec((2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1),3))
@@ -599,13 +485,12 @@ subroutine read_RVR()
         do i_dir=-convert_size_x,convert_size_x
         do j_dir=-convert_size_y,convert_size_y
         do k_dir=-convert_size_z,convert_size_z
-        
+
                 dir_vec(i,:)=(/i_dir,j_dir,k_dir/)
                 i=i+1
         enddo
         enddo
         enddo
-
 
         do i=1,(2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1)
         do j=1,(2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1)
@@ -619,28 +504,6 @@ subroutine read_RVR()
                         stop
                 endif
         enddo
-
-
-
-
-        !do i_dir=1,d_ext
-        !do j_dir=1,d_ext
-        !if (.not. all(dir_vec(i_dir,:) .eq. 0)) cycle
-        !if (.not. (dir_vec(j_dir,3) .eq. 0)) cycle
-        
-        !do iwan=6,6!wan_min,wan_max
-        !do jwan=6,6!wan_min,wan_max
-        !do is=2,2!2/nspin
-        !do js=2,2!2/nspin
-        !        iRVR=1+(i_dir-1)+d_ext*((iwan-wan_min)*2+is-1)
-        !        jRVR=1+(j_dir-1)+d_ext*((jwan-wan_min)*2+js-1)
-        !print*, abs(RVR(3,jRVR,iRVR)),dir_vec(j_dir,:)
-        !enddo
-        !enddo
-        !enddo
-        !enddo
-        !enddo
-        !enddo
 
 end subroutine read_RVR
 

@@ -1,5 +1,6 @@
 # Global settings (TOML). Regenerate inputs and rebuild after editing.
 [paths]
+scf_dir = "1_scf"
 func_dir = "4_potential/fit"
 nscf_dir = "5_wannier"
 rvr_dir = "6_RVR"

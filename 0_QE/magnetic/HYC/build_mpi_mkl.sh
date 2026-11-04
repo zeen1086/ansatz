@@ -13,4 +13,4 @@ if grep -E '^(BLAS_LIBS|LAPACK_LIBS|SCALAPACK_LIBS).*mkl_(intel|gnu)_thread' mak
  echo 'Refusing threaded MKL' >&2; exit 1
 fi
 make -j"${BUILD_JOBS:-2}" pw
-make -C PP/src -j"${BUILD_JOBS:-2}" pp_exam.x
+make -C PP -j"${BUILD_JOBS:-2}" all

@@ -127,7 +127,6 @@ contains
       real(basis%n_active,dp) / real(max(basis%n_reduced,1),dp)
   end subroutine build_c3_reduced_basis
 
-
   subroutine build_c3_window_basis(grid_x, grid_y, grid_z, sym_x, sym_y,     &
       sym_z, ni, basis)
     implicit none
@@ -218,7 +217,6 @@ contains
     write(*,'(A,I0)') 'C3v output mapping relations = ', basis%n_relations
   end subroutine build_c3_window_basis
 
-
   subroutine close_c3_orbit_mask(basis, active_mask, removed_count,          &
       active_count)
     implicit none
@@ -258,7 +256,6 @@ contains
       end do
     end do
   end subroutine close_c3_orbit_mask
-
 
   subroutine project_c3_orbit_values(basis, active_mask, values, rel_change, &
       max_change)
@@ -312,7 +309,6 @@ contains
     end do
     rel_change = sqrt(diff2 / max(norm2, 1d-300))
   end subroutine project_c3_orbit_values
-
 
   subroutine solve_c3_reduced_cd(basis, gram, rhs, penalty, l1, l2, n_iter,    &
       tolerance, scale, grid_weight, coef, iter_used, converged, anchor,       &
@@ -440,7 +436,6 @@ contains
     deallocate(prox_diag, prox_rhs)
   end subroutine solve_c3_reduced_cd
 
-
   subroutine c3_basis_residual(basis, coef, max_abs, rms)
     implicit none
     type(c3_reduced_basis), intent(in) :: basis
@@ -475,7 +470,6 @@ contains
     end do
     rms = sqrt(sumsq / real(max(nterm,1),dp))
   end subroutine c3_basis_residual
-
 
   subroutine add_c3v_operation(nx, ny, nz, ni, active_mask, operation_kind,   &
       parent,                                                                  &
@@ -542,7 +536,6 @@ contains
     end do
   end subroutine add_c3v_operation
 
-
   subroutine add_c3v_window_operation(grid_x, grid_y, grid_z, sym_x, sym_y, &
       sym_z, ni, operation_kind, parent, relation_count)
     implicit none
@@ -601,7 +594,6 @@ contains
     end do
   end subroutine add_c3v_window_operation
 
-
   subroutine build_channel_positions(nx, ny, nz, positions)
     implicit none
     integer, intent(in) :: nx, ny, nz
@@ -617,7 +609,6 @@ contains
     positions(:,2) = positions(:,2) * real(ny,dp)
     positions(:,3) = positions(:,3) * real(nz,dp)
   end subroutine build_channel_positions
-
 
   subroutine build_channel_map(center, transform, positions, channel_map)
     implicit none
@@ -639,7 +630,6 @@ contains
     end do
   end subroutine build_channel_map
 
-
   subroutine c3_plus_transform(transform)
     implicit none
     real(dp), intent(out) :: transform(3,3)
@@ -649,7 +639,6 @@ contains
     transform(3,:) = (/0d0, 0d0, 1d0/)
   end subroutine c3_plus_transform
 
-
   subroutine mirror_transform(transform)
     implicit none
     real(dp), intent(out) :: transform(3,3)
@@ -658,7 +647,6 @@ contains
     transform(2,:) = (/1d0, 0d0, 0d0/)
     transform(3,:) = (/0d0, 0d0, 1d0/)
   end subroutine mirror_transform
-
 
   subroutine union_sets(parent, a, b)
     implicit none
@@ -678,7 +666,6 @@ contains
       parent(root_a) = root_b
     end if
   end subroutine union_sets
-
 
   integer function find_root(parent, item)
     implicit none
@@ -700,7 +687,6 @@ contains
     find_root = root
   end function find_root
 
-
   subroutine validate_solver_shapes(basis, gram, rhs, penalty, scale, weight,  &
       coef)
     implicit none
@@ -719,7 +705,6 @@ contains
         size(coef,2) /= basis%n_channel) stop 'C3v solver output shape mismatch'
   end subroutine validate_solver_shapes
 
-
   subroutine clear_basis(basis)
     implicit none
     type(c3_reduced_basis), intent(inout) :: basis
@@ -734,7 +719,6 @@ contains
     basis%n_relations = 0
   end subroutine clear_basis
 
-
   subroutine clear_c3_reduced_basis(basis)
     implicit none
     type(c3_reduced_basis), intent(inout) :: basis
@@ -742,14 +726,12 @@ contains
     call clear_basis(basis)
   end subroutine clear_c3_reduced_basis
 
-
   integer function coefficient_index(i, channel, ni)
     implicit none
     integer, intent(in) :: i, channel, ni
 
     coefficient_index = i + ni * (channel - 1)
   end function coefficient_index
-
 
   subroutine decode_coefficient_index(idx, ni, i, channel)
     implicit none
@@ -760,14 +742,12 @@ contains
     i = mod(idx - 1, ni) + 1
   end subroutine decode_coefficient_index
 
-
   integer function index_from_grid(ix, iy, iz, nx, ny)
     implicit none
     integer, intent(in) :: ix, iy, iz, nx, ny
 
     index_from_grid = 1 + ix + (nx + 1) * iy + (nx + 1) * (ny + 1) * iz
   end function index_from_grid
-
 
   real(dp) function soft_threshold(value, threshold)
     implicit none

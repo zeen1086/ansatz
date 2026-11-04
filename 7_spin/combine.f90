@@ -11,7 +11,7 @@ program spin
         real(kind(0d0)),allocatable        :: spin_vec(:,:,:),off_set(:,:)
         real(kind(0d0))         :: A2B(3),r_tmp(3),Mz
         real(kind(0d0))    :: rad,pi,x,y_com,x_com,theta
-        real(kind(0d0))    :: a(3,3),a0 ,avB(3),avA(3),rrBdr(3),rrAdr(3)     
+        real(kind(0d0))    :: a(3,3),a0 ,avB(3),avA(3),rrBdr(3),rrAdr(3)
         real(kind(0d0)) :: a_next,b_next,s_abs
         real(kind(0d0)) ::vec6(6,3),vec3(3),axial
         integer :: int3(3),super_nx,super_ny,super_nz,n_func
@@ -26,9 +26,8 @@ program spin
         complex(kind(0d0)) :: sx(3),sy(3),sz(3),cI
         complex(kind(0d0)),allocatable  :: RVR(:,:,:),RVR_POT_ave(:,:),RVR_tmp(:,:)
         complex(kind(0d0)),allocatable  :: H_sk(:,:),read_H(:,:),full_H(:,:)
-        complex(kind(0d0)),allocatable  :: read_AAR(:,:,:,:),full_AAR(:,:,:,:)
-        complex(kind(0d0)),allocatable  :: full_H_sp(:,:),full_AAR_sp(:,:,:,:)
-        real(kind(0d0)) :: q_vec(3) 
+        complex(kind(0d0)),allocatable  :: full_H_sp(:,:)
+        real(kind(0d0)) :: q_vec(3)
 
 func_dir = p_func_dir
 nscf_dir = p_nscf_dir
@@ -60,10 +59,7 @@ H_dim=nwan*2/nspin*period_x*period_y*period_z
 allocate(H_sk(H_dim,H_dim))
 allocate(full_H(H_dim,H_dim))
 allocate(read_H(H_dim*nspin/2,H_dim*nspin/2))
-allocate(read_AAR(H_dim*nspin/2,H_dim*nspin/2,super_nrept,3))
-allocate(full_AAR(H_dim,H_dim,super_nrept,3))
 allocate(full_H_sp(H_dim,H_dim))
-allocate(full_AAR_sp(H_dim,H_dim,super_nrept,2))
 
 do irept=1,super_nrept
         print*,irept
@@ -77,7 +73,7 @@ do irept=1,super_nrept
                 &,status='old',form='unformatted')
         read(102)   H_sk(:,:)
         close(102)
-        
+
         do iwan=1,H_dim*nspin/2
         do jwan=1,H_dim*nspin/2
         do is=1,2/nspin
@@ -91,15 +87,11 @@ do irept=1,super_nrept
 
         full_H_sp(:,:)=full_H(:,:)
 
-
-
         open(unit=102,file='./tot_HR/hr_'//trim(rept_char),action='write',access='stream'&
                 &,status='replace',form='unformatted')
         write(102)      full_H_sp(:,:)
         close(102)
-        !if (.not. mod(irept,10) .eq. 8) cycle
-       ! print*,irept,sum(abs(H_sk(:,:,irept))**2),super_ir_vec(irept,:)
-        
+
         if (all (super_ir_vec(irept,:).eq. (/0,0,0/) )) then
                 open(unit=102,file='./R0',action='write',access='append',status='replace')
                 do iwan=1,H_dim
@@ -110,38 +102,6 @@ do irept=1,super_nrept
                 close(102)
         endif
 enddo
-
-
-!open(unit=102,file='./super_H/AAR',action='read',access='sequential'&
-!                &,status='old',form='unformatted')
-!        read(102)   read_AAR(:,:,:,:)
-!close(102)
-
-
-full_AAR(:,:,:,:)=dcmplx(0.0d0,0.0d0)
-do iwan=1,H_dim*nspin/2
-do jwan=1,H_dim*nspin/2
-do is=1,2/nspin
-        i_dim=is+2/nspin*(iwan-1)
-        j_dim=is+2/nspin*(jwan-1)
-        full_AAR(i_dim,j_dim,:,:)=read_AAR(iwan,jwan,:,:)
-enddo
-enddo
-enddo
-
-full_AAR_sp(:,:,:,1:2)=full_AAR(:,:,:,1:2)
-
-
-do irept=1,super_nrept
-        call int2char(irept,rept_char)
-
-        open(unit=102,file='./tot_HR/AAR_'//trim(rept_char),action='write',access='stream'&
-                &,status='replace',form='unformatted')
-                write(102)      full_AAR_sp(:,:,irept,1:2)
-        close(102)
-enddo
-
-
 
 contains
 
@@ -156,9 +116,6 @@ IF ((in_int .LT. 10000) .and. (in_int .GE. 1000) ) WRITE(out_char,'(I4)')in_int
 IF ((in_int .LT. 100000) .and. (in_int .GE. 10000) )WRITE(out_char,'(I5)')in_int
 
 end subroutine int2char
-
-
-
 
 subroutine load_super_size()
         irept=0
@@ -182,14 +139,6 @@ subroutine load_super_size()
         enddo
         close(102)
 
-
-
-
-
-
 end subroutine
-
-
-
 
 end program

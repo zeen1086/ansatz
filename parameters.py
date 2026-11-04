@@ -10,11 +10,13 @@ except ModuleNotFoundError:
     import tomli as tomllib  # Python 3.10 hosts may use an already installed tomli.
 
 ROOT = Path(__file__).resolve().parent
-PATH_KEYS = {"func_dir", "nscf_dir", "rvr_dir", "super_h_dir", "pseudo_dir"}
+PATH_KEYS = {"scf_dir", "func_dir", "nscf_dir", "rvr_dir", "super_h_dir", "pseudo_dir"}
 
 
 def load(path: Path | None = None) -> dict:
-    path = Path(path or os.environ.get("ANSATZ_PARAMETER", ROOT / "parameter")).resolve()
+    if path is None:
+        path = ROOT / os.environ.get("ANSATZ_PARAMETER", "parameter")
+    path = Path(path).resolve()
     sections = tomllib.loads(path.read_text())
     values = {}
     for section in sections.values():
@@ -42,6 +44,15 @@ def load(path: Path | None = None) -> dict:
             or values["num_bands"] != values["last_band"]-values["first_band"]+1
             or values["num_bands"] < values["nwan"]):
         raise ValueError("Wannier band window, num_bands, nwan and nbnd are inconsistent")
+    excluded = set()
+    for item in values["exclude_bands"].replace(",", " ").split():
+        bounds = [int(x) for x in item.split("-")]
+        if len(bounds) > 2 or min(bounds) < 1 or max(bounds) > values["nbnd"] or bounds[-1] < bounds[0]:
+            raise ValueError("invalid exclude_bands")
+        excluded.update(range(bounds[0], bounds[-1]+1))
+    expected = set(range(1, values["first_band"])) | set(range(values["last_band"]+1, values["nbnd"]+1))
+    if excluded != expected:
+        raise ValueError("exclude_bands must leave exactly first_band..last_band")
     for axis, k in zip("xyz", ("nk1", "nk2", "nk3")):
         extent = values[f"convert_size_{axis}"]
         if type(extent) is not int or extent < 0 or 2*extent+1 > values[k]:
@@ -63,11 +74,13 @@ def load(path: Path | None = None) -> dict:
         raise ValueError("prefix must contain letters, digits or underscores")
     if values["export_grid"] not in ("smooth", "dense") or type(values["write_v_qe"]) is not bool:
         raise ValueError("export_grid must be smooth/dense and write_v_qe must be boolean")
-    for key in ("ef", "eta", "a0", "celldm3", "ecutwfc", "conv_thr", "fit_tolerance"):
+    for key in ("ef", "eta", "a0", "celldm3", "ecutwfc", "conv_thr", "fit_tolerance", "lambda_high", "cr_magnetization"):
         if isinstance(values[key], bool) or not isinstance(values[key], (int, float)):
             raise ValueError(f"{key} must be numeric")
     if values["a0"] <= 0 or values["celldm3"] <= 0 or values["conv_thr"] <= 0:
         raise ValueError("lattice constants and conv_thr must be positive")
+    if values["cr_magnetization"] <= 0:
+        raise ValueError("cr_magnetization must be a positive spin-vector length")
     for key in PATH_KEYS:
         values[key] = str((path.parent / values[key]).resolve())
     return values

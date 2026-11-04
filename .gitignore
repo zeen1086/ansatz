@@ -35,3 +35,17 @@ w_density
 B_general*
 spin.in
 tot_HR/
+
+*.x.new
+converted/
+WFN/
+u_mat_HYC
+u_dis_mat_HYC
+window_TF_HYC
+k_list
+ir_vec_HYC
+H_deg_HYC
+hr_HYC_*
+super_H/
+R0
+physical_spin*

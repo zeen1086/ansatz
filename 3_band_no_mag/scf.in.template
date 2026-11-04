@@ -3,6 +3,7 @@
  outdir='./tmp', verbosity='high', wf_collect=.true.,
 /
 &SYSTEM
+ noncolin=${noncolin},
 
  ecutwfc=${ecutwfc}, celldm(1)=${a0}, celldm(3)=${celldm3},
  ibrav=4, nat=8, ntyp=2,

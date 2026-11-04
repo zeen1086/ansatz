@@ -21,16 +21,12 @@ program make_super_atom
                                         &read3(1)/ns1+1.0/ns1*is1,&
                                         &read3(2)/ns2+1.0/ns2*is2,&
                                         &read3(3)/ns3+1.0/ns3*is3
-                                        !&mod(read3(1)/ns1+1.0/ns1*is1+0.128035673+0.12196433545,1.0),&
-                                        !&mod(read3(2)/ns2+1.0/ns2*is2+0.75,1.0),&
-                                        !&mod(read3(3)/ns3+1.0/ns3*is3+0.0977827528+0.15221725405,1.0)
                 enddo
                 enddo
                 enddo
         enddo
         close(101)
         close(102)
-
 
 end program
 

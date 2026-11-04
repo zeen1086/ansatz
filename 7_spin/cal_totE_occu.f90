@@ -2,7 +2,7 @@ program wan_interpolat
   use parameter_mod
     use omp_lib
     implicit none
-    
+
     complex(kind(0d0)),allocatable  :: H_wan(:,:,:),H_k(:,:)
     integer :: ik,nk,nkx,nky,nkz,irept,nrept,io,read3_int(3)
     integer :: i,j,ix,iy,iz,nwan_sp
@@ -24,7 +24,7 @@ program wan_interpolat
     complex(kind(0d0))      :: I2pi
     complex(kind(0d0)),allocatable:: phase0(:,:),phase1(:,:),phase_k(:)
     complex(kind(0d0)),allocatable:: H_wan_tmp(:,:)
-    real(kind(0d0))         :: pi,DOS_max,DOS_min       
+    real(kind(0d0))         :: pi,DOS_max,DOS_min
     character(len=200)      :: useless_string,nscf_dir,rvr_root
     character(len=20)       :: eta_char
     integer,allocatable     :: pool(:,:)
@@ -36,14 +36,13 @@ program wan_interpolat
     real(kind=8) :: time_diag
 
     complex(kind(0d0)), allocatable :: H_step1(:,:)
-    
+
     complex(kind(0d0)), allocatable :: work(:)
     real(kind(0d0)),    allocatable :: rwork(:)
     integer,            allocatable :: iwork(:)
     integer :: lwork, lrwork, liwork, info
 
     real(kind=8) :: width, inv_eta, delta_E_val, fermi_func, term_exp
-
 
 nscf_dir = p_nscf_dir
 rvr_root = p_rvr_dir
@@ -67,7 +66,7 @@ Ef = p_ef
     a(1,:) = (/   1.000000d0,   0.000000d0,   0.000000d0 /)
     a(2,:) = (/  -0.500000d0,   0.866025d0,   0.000000d0 /)
     a(3,:) = (/   0.000000d0,   0.000000d0,   celldm3  /)
-    a(:,:)=a(:,:)*a0*0.529177d0 
+    a(:,:)=a(:,:)*a0*0.529177d0
 
     time_diag = 0.0d0
     t_start = omp_get_wtime()
@@ -156,7 +155,7 @@ Ef = p_ef
     do iz=0,period_z-1
         i=1+iz+period_z*iy+period_z*period_y*ix
         nb(i,:)=(/ix*1.000d0/period_x,iy*1.000d0/period_y,iz*1.000d0/period_z/)
-        
+
         R_list(i,1)=sum(a(:,1)*(/ix,iy,iz/))
         R_list(i,2)=sum(a(:,2)*(/ix,iy,iz/))
         R_list(i,3)=sum(a(:,3)*(/ix,iy,iz/))
@@ -190,14 +189,14 @@ Ef = p_ef
     !$OMP PARALLEL PRIVATE(ipool,n1,n2,ik,ikxy,iz,c_ix,c_iy,c_iz,c_jx,c_jy,c_jz,i,j,&
     !$OMP& irept,i1,i2,i3,i4,f1,f2,f3,f4,ctmp1,ctmp2,ctmp3,E1,i_eta,i_dim,iE) &
     !$OMP& PRIVATE(H_wan_tmp, H_k, eig_tmp, occu_local, tot_E_local) &
-    !$OMP& PRIVATE(t_diag_start, t_diag_end) &  
+    !$OMP& PRIVATE(t_diag_start, t_diag_end) &
     !$OMP& PRIVATE(H_step1, work, rwork, iwork, lwork, lrwork, liwork, info) &
     !$OMP& PRIVATE(width, inv_eta, delta_E_val, fermi_func, term_exp) &
     !$OMP& PRIVATE(phase0, phase_k) &
     !$OMP& SHARED(H_wan,k_list,npool,super_size,period_x,period_y,period_z,phase1,I2pi,nb,nkz,ir_vec,&
     !$OMP& nwan_sp,H_dim,n_DOS,n_eta,pool,DOS_E_LIST,eta,occu,tot_E,nrept,time_diag,DOS_min)&
     !$OMP& DEFAULT(NONE)
-    
+
     allocate(H_k(H_dim,H_dim))
     allocate(eig_tmp(H_dim))
     allocate(H_wan_tmp(H_dim,H_dim))
@@ -206,7 +205,7 @@ Ef = p_ef
     allocate(H_step1(H_dim, H_dim))
     allocate(phase0(super_size, super_size))
     allocate(phase_k(nrept))
-    
+
     occu_local(:,:)=0.00d0
     tot_E_local(:,:)=0.00d0
 
@@ -216,11 +215,11 @@ Ef = p_ef
     lrwork = int(rwork(1))
     liwork = iwork(1)
     deallocate(work, rwork, iwork)
-    
+
     if (lwork < H_dim + 1) lwork = H_dim + 1
     if (lrwork < H_dim) lrwork = H_dim
     if (liwork < 1) liwork = 1
-    
+
     allocate(work(lwork))
     allocate(rwork(lrwork))
     allocate(iwork(liwork))
@@ -259,11 +258,11 @@ Ef = p_ef
             do i = 1, super_size
                 i3 = nwan_sp*(i-1) + 1
                 f3 = nwan_sp*i
-                
+
                 do n2 = 1, super_size
                     i2 = nwan_sp*(n2-1) + 1
                     f2 = nwan_sp*n2
-                    
+
                     do n1 = 1, super_size
                         ctmp2 = phase1(i, n1)
                         i1 = nwan_sp*(n1-1) + 1
@@ -277,12 +276,12 @@ Ef = p_ef
             do i = 1, super_size
                 i3 = nwan_sp*(i-1) + 1
                 f3 = nwan_sp*i
-                
+
                 do j = 1, super_size
                     ctmp1 = phase0(i, j)
                     i4 = nwan_sp*(j-1) + 1
                     f4 = nwan_sp*j
-                    
+
                     do n2 = 1, super_size
                         ctmp3 = ctmp1 * conjg(phase1(j, n2))
                         i2 = nwan_sp*(n2-1) + 1
@@ -297,33 +296,32 @@ Ef = p_ef
 
             t_diag_start = omp_get_wtime()
             call diasym_eigvals(H_k, eig_tmp(:), H_dim, work, lwork, rwork, lrwork, iwork, liwork)
-            t_diag_end = omp_get_wtime()        
+            t_diag_end = omp_get_wtime()
 
             !$OMP ATOMIC
             time_diag = time_diag + (t_diag_end - t_diag_start)
 
             do i_dim=1,H_dim
                 E1=eig_tmp(i_dim)
-                
+
                 do i_eta=1,n_eta
                     width = 20.0d0 * eta(i_eta)
                     inv_eta = 1.0d0 / eta(i_eta)
-                    
+
                     do iE = 1, n_DOS
                         delta_E_val = E1 - DOS_E_list(iE)
-                        
 
                         if (delta_E_val < -width) then
                             occu_local(iE, i_eta) = occu_local(iE, i_eta) + 1.0d0
                             tot_E_local(iE, i_eta) = tot_E_local(iE, i_eta) + E1
-                        
+
                         elseif (delta_E_val > width) then
                             cycle
-                        
+
                         else
                             term_exp = exp(delta_E_val * inv_eta)
                             fermi_func = 1.0d0 / (1.0d0 + term_exp)
-                            
+
                             occu_local(iE, i_eta) = occu_local(iE, i_eta) + fermi_func
                             tot_E_local(iE, i_eta) = tot_E_local(iE, i_eta) + E1 * fermi_func
                         endif
@@ -333,17 +331,17 @@ Ef = p_ef
 
     ENDDO
     !$OMP END DO
-    
+
     !$OMP CRITICAL
-    occu(:,:)=occu(:,:)+occu_local(:,:)        
+    occu(:,:)=occu(:,:)+occu_local(:,:)
     tot_E(:,:)=tot_E(:,:)+tot_E_local(:,:)
     !$OMP END CRITICAL
-    
+
     deallocate(H_k, H_step1, eig_tmp, H_wan_tmp)
     deallocate(occu_local, tot_E_local)
     deallocate(work, rwork, iwork)
     deallocate(phase0, phase_k)
-    
+
     !$OMP END PARALLEL
 
     t_end = omp_get_wtime()

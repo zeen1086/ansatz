@@ -9,6 +9,6 @@ THREADS=$("$PYTHON" parameters.py threads)
 export OMP_NUM_THREADS="$THREADS" MKL_NUM_THREADS=1 OMP_DYNAMIC=FALSE MKL_DYNAMIC=FALSE
 cd "$SCRIPT_DIR"
 mkdir -p data tot_HR
-./cal_Hsk.x
-./combine.x
-./cal_torque_hf.x
+"$PYTHON" "$ROOT/run.py" 7_spin/cal_Hsk.f90
+"$PYTHON" "$ROOT/run.py" 7_spin/combine.f90
+"$PYTHON" "$ROOT/run.py" 7_spin/cal_torque_hf.f90

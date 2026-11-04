@@ -6,4 +6,4 @@ PYTHON=${PYTHON:-python3}
 cd "$ROOT"
 "$PYTHON" build.py 5_wannier/make_wan/make_w_density.f90
 cd "$SCRIPT_DIR"
-./make_w_density.x | tee make_w_density.log
+"$PYTHON" "$ROOT/run.py" 5_wannier/make_wan/make_w_density.f90 | tee make_w_density.log

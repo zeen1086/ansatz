@@ -1,5 +1,6 @@
 program direct_torque_hf
   use parameter_mod
+  use spin_channels_mod, only: spin_channels, spin_chirality
     use omp_lib
     implicit none
 
@@ -289,7 +290,7 @@ Ef = p_ef
         deg2rad = pi/180.0d0
         theta_nu(:)=theta_nu(:)*deg2rad
         phi_nu(:)=phi_nu(:)*deg2rad
-        mag_moment = 3.0d0
+        mag_moment = p_cr_magnetization
 
         do isite=1,n_input
             physical_spin(isite,:) = (/ mag_moment*sin(theta_nu(isite))*cos(phi_nu(isite)), &
@@ -399,7 +400,7 @@ Ef = p_ef
 
     subroutine build_dH_wan()
         real(dp), allocatable :: coefficient(:)
-        real(dp) :: chi_mod, dchi_mod
+        real(dp) :: channel_chi(6), channel_dchi(6), values(n_func)
         integer :: base_index, mod_index
 
         allocate(coefficient(n_func))
@@ -415,19 +416,11 @@ Ef = p_ef
             do iz=0,spin_grid_z-1
                 i=1+iz+spin_grid_z*iy+spin_grid_y*spin_grid_z*ix
 
-                coefficient(:)=0.0d0
-                do j=1,n_dep
-                    base_index = 1 + (j-1)*3
-                    coefficient(base_index:base_index+2)=dspin_vec(i,1:3,j,isite)
-
-                    if (n_func .eq. 2*n_dep*3) then
-                        mod_index = 1 + n_dep*3 + (j-1)*3
-                        chi_mod = local_chi_all(i,j)
-                        dchi_mod = local_chi_derivative(i,j,isite)
-                        coefficient(mod_index:mod_index+2) = &
-                            dchi_mod*spin_vec(i,1:3,j) + chi_mod*dspin_vec(i,1:3,j,isite)
-                    endif
-                enddo
+                call spin_chirality(spin_vec(i,:,:), channel_chi, &
+                     dspin_vec(i,:,:,isite), channel_dchi)
+                call spin_channels(spin_vec(i,:,:), channel_chi, p_channel_mask, &
+                     p_channel_source, p_lambda_high, values, dspin_vec(i,:,:,isite), &
+                     channel_dchi, coefficient)
                 if (sum(abs(coefficient(:))) .lt. 1.0d-14) cycle
 
                 do i_dir=1,d_ext
@@ -509,65 +502,6 @@ Ef = p_ef
 
         deallocate(coefficient)
     end subroutine build_dH_wan
-
-    real(dp) function local_chi_all(i_cell, j_src)
-        integer, intent(in) :: i_cell, j_src
-        integer :: k, n_count
-        real(dp) :: norm_j, norm_k, dot_jk
-
-        local_chi_all = 0.0d0
-        n_count = 0
-
-        norm_j = sqrt(sum(spin_vec(i_cell,:,j_src)**2))
-        if (norm_j .lt. 1.0d-12) return
-
-        do k=1,n_dep
-            if (k .eq. j_src) cycle
-            norm_k = sqrt(sum(spin_vec(i_cell,:,k)**2))
-            if (norm_k .lt. 1.0d-12) cycle
-            dot_jk = sum(spin_vec(i_cell,:,j_src)*spin_vec(i_cell,:,k))       &
-                / (norm_j*norm_k)
-            local_chi_all = local_chi_all + dot_jk - 1.0d0
-            n_count = n_count + 1
-        enddo
-
-        if (n_count .gt. 0) local_chi_all = local_chi_all/dble(n_count)
-    end function local_chi_all
-
-    real(dp) function local_chi_derivative(i_cell, j_src, isite)
-        integer, intent(in) :: i_cell, j_src, isite
-        integer :: k, n_count
-        real(dp) :: norm_j, norm_k, cos_jk, dcos_jk
-        real(dp) :: sj(3), sk(3), dsj(3), dsk(3)
-
-        local_chi_derivative = 0.0d0
-        n_count = 0
-
-        sj(:) = spin_vec(i_cell,:,j_src)
-        dsj(:) = dspin_vec(i_cell,:,j_src,isite)
-        norm_j = sqrt(sum(sj(:)**2))
-        if (norm_j .lt. 1.0d-12) return
-
-        do k=1,n_dep
-            if (k .eq. j_src) cycle
-            sk(:) = spin_vec(i_cell,:,k)
-            dsk(:) = dspin_vec(i_cell,:,k,isite)
-            norm_k = sqrt(sum(sk(:)**2))
-            if (norm_k .lt. 1.0d-12) cycle
-
-            cos_jk = sum(sj(:)*sk(:))/(norm_j*norm_k)
-            dcos_jk = (sum(dsj(:)*sk(:))+sum(sj(:)*dsk(:)))                  &
-                / (norm_j*norm_k) - cos_jk                                  &
-                * (sum(sj(:)*dsj(:))/(norm_j*norm_j)                        &
-                + sum(sk(:)*dsk(:))/(norm_k*norm_k))
-            local_chi_derivative = local_chi_derivative + dcos_jk
-            n_count = n_count + 1
-        enddo
-
-        if (n_count .gt. 0) then
-            local_chi_derivative = local_chi_derivative/dble(n_count)
-        endif
-    end function local_chi_derivative
 
     subroutine compute_torque()
         n_DOS=1

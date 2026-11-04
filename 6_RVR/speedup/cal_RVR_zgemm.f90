@@ -178,7 +178,6 @@ wan_max = p_wan_max
   allocate (RVR_tmp(d_ext, d_ext))
   allocate (idx_i(d_ext), idx_j(d_ext))
 
-
   t_read_wan = 0.0d0
   t_pack     = 0.0d0
   t_kernel   = 0.0d0

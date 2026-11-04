@@ -6,14 +6,12 @@ program make_wan_func
         integer         :: nspin,i1,i2
         integer         :: wan_bnd,read_int3(3),nwan
         complex(kind(0d0)),allocatable :: ini_wfn(:,:),fin_wfn(:,:,:),read_wfn(:,:)
-        !complex(kind(0d0)),allocatable :: psi_in(:,:),psi_out(:,:),psi_mid(:,:),
         complex(kind(0d0)),allocatable :: unmk(:,:,:)
         complex(kind(0d0)),allocatable :: unmk_dis(:,:,:),U(:,:,:)
         complex(kind(0d0)),allocatable :: wan_fun(:,:,:)!,to_write_wan(:,:,:)
         complex(kind(0d0)),allocatable :: wan_full_grid(:,:)
         complex(kind(0d0)),allocatable :: w_dx(:,:,:),w_dz(:,:,:),w_dy(:,:,:)
         complex(kind(0d0)),allocatable :: phase(:,:)
-        !real(kind(0d0)),allocatable :: to_write(:)
         real(kind(0d0)),allocatable ::  k_list(:,:)
         real(kind(0d0)) :: read3(3),r(3)
         complex(kind(0d0)) :: cI
@@ -25,7 +23,6 @@ program make_wan_func
         integer,allocatable :: full_grid(:,:)
         integer :: i_dir,j_dir,k_dir,iwan
         integer :: convert_size_x,convert_size_y,convert_size_z
-        !!!mpi!!!
         real :: start, finish,start2, finish2
         complex(kind(0d0)),allocatable ::wan_fun_local(:,:,:)
         complex(kind(0d0))      :: ctmp,d3(3,2)
@@ -33,21 +30,16 @@ program make_wan_func
         integer                 :: muti_pool,imuti_pool,ierr,my_rank,size
         integer                 :: npool ,ipool
 
-        !!!mpi!!! 
         integer,allocatable     :: include_TF(:,:)
         integer                 :: i_count
         integer,allocatable     :: win_min(:),win_max(:),R_shift(:,:)
-
 
 include 'mpif.h'
 call read_row_index(iwan)
 if (iwan > p_nwan) error stop 'Wannier row exceeds nwan'
 
-
-
 cI=dcmplx(0.0d0,1.0d0)
-pi=3.1415926d0
-
+pi=acos(-1d0)
 
 nk1=p_nk1
 nk2=p_nk2
@@ -70,9 +62,6 @@ print*, "too large z  wannier size "
 stop
 endif
 
-
-
-
 allocate(dir_vec((2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1),3))
 i=1
 do i_dir=-convert_size_x,convert_size_x
@@ -83,7 +72,6 @@ do k_dir=-convert_size_z,convert_size_z
 enddo
 enddo
 enddo
-
 
 allocate(k_list(nk,3))
 allocate(cell_grid(nk,3))
@@ -98,28 +86,28 @@ enddo
 enddo
 enddo
 
-
 ik=0
-open(unit=101,file='../k_list',action='read',access='sequential',status='old')
+open(unit=101,file=p_nscf_dir//'k_list',action='read',access='sequential',status='old')
 do
         read(101,'(3F12.8)',iostat=io) read3(:)
         if (io /=0) exit
+        if (ik >= nk) error stop 'too many k_list rows'
         ik=ik+1
         k_list(ik,:)=read3(:)
-    !    print*,k_list(ik,:)
 enddo
 close(101)
+if (ik /= nk) error stop 'k_list row count disagrees with parameter'
 
-
-
-open(unit=101,file='../u_mat_HYC',action='read',access='sequential',form='unformatted')
+open(unit=101,file=p_nscf_dir//'u_mat_HYC',action='read',access='sequential',form='unformatted')
 read(101) read_int3
+if (any(read_int3 /= [p_nwan,p_nwan,nk])) error stop 'u_mat_HYC dimensions disagree with parameter'
 allocate(unmk(read_int3(1),read_int3(2),read_int3(3)))
 read(101) unmk
 close(101)
 
-open(unit=101,file='../u_dis_mat_HYC',action='read',access='sequential',form='unformatted')
+open(unit=101,file=p_nscf_dir//'u_dis_mat_HYC',action='read',access='sequential',form='unformatted')
 read(101) read_int3
+if (any(read_int3 /= [p_num_bands,p_nwan,nk])) error stop 'u_dis_mat_HYC dimensions disagree with parameter'
 nbnd=read_int3(1)
 nwan=read_int3(2)
 if (.not. nk .eq. read_int3(3)) then
@@ -135,34 +123,20 @@ allocate(R_shift(nwan,3))
 
 R_shift(:,:)=0
 ir=1
-!open(unit=101,file='./R_shift',action='read',access='sequential')
-!do
-!        read(101,'(3I8)',iostat=io) read_int3(:)
-!        if(io/=0)exit
-     !   R_shift(ir,:)=read_int3(:)
-!        ir=ir+1
-!enddo
-!close(101)
-
-!print*, nbnd,nk
-
 
 allocate(include_TF(nbnd,nk))
 
 include_TF(:,:)=0
 
-open(unit=101,file='../window_TF_HYC',action='read',access='sequential',form='unformatted')
+open(unit=101,file=p_nscf_dir//'window_TF_HYC',action='read',access='sequential',form='unformatted')
 read(101) include_TF
 close(101)
 
 win_min(:)=999
 win_max(:)=0
 
-
-
 do ik=1,nk
 do i=1,nbnd-1
-        !print*, i, ik, include_TF(i,ik),include_TF(i+1,ik),win_min(ik),win_max(ik)
         if ((include_TF(i,ik)   .eq. 1).and. ( include_TF(i+1,ik) .eq. 0)) win_max(ik)=i
         if ((include_TF(i+1,ik) .eq. 1).and. ( include_TF(i  ,ik) .eq. 0)) win_min(ik)=i+1
 enddo
@@ -176,7 +150,6 @@ enddo
                 print*, 'win max not found for k=',ik
                 stop
         endif
- !       print*,win_min(ik),win_max(ik)
 enddo
 
 U(:,:,:)=dcmplx(0.0d0,0.0d0)
@@ -189,18 +162,11 @@ enddo
 enddo
 enddo
 
-
-
-
-
-
-
-file_name='../V_HYC_dp'
+file_name=p_nscf_dir//'V_HYC_dp'
 open(unit=101,file=trim(file_name),access='sequential',form='unformatted')
 read(101) nx,ny,nz
 print*,nx,ny,nz
 close(101)
-
 
 allocate(full_grid(nx*ny*nz*(2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1),4))
 
@@ -218,20 +184,12 @@ enddo
 enddo
 enddo
 
-
-
-
-
 allocate(read_wfn(nx*ny*nz,nspin))
 allocate(ini_wfn(nx*ny*nz,nspin))!1+nx*ny*z_cut:nx*ny*(nz-z_cut)
 allocate(wan_fun((2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1),nx*ny*nz,nspin))
 
 allocate(wan_fun_local((2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1),nx*ny*nz,nspin))
-!allocate(to_write_wan((2*convert_size+1)**3,nx*ny*nz,2))
 allocate(phase(nk,nx*ny*nz))
-!allocate(to_write(nx*ny))
-
-
 
 do ix=0,nx-1
 do iy=0,ny-1
@@ -239,41 +197,29 @@ do iz=0,nz-1
         r(:)=(/1.0d0*ix/nx,1.0d0*iy/ny,1.0d0*iz/nz/)
         ir=1+(ix)+nx*(iy)+nx*ny*(iz)
         do ik=1,nk
-!print*,ix,iy,iz,ik
                 phase(ik,ir)=exp(cI*2.0d0*pi*sum(r(:)*k_list(ik,:)))
-!print*,ix,iy,iz,ik,r(:),k_list(ik,:)
         enddo
 enddo
 enddo
 enddo
 
-
-
-
-
 ipool=0
 do ik=1,nk
-!do ibnd=1,nwan
         ipool=ipool+1
-!enddo
 enddo
-
 
 npool=ipool
 allocate(pool(npool,1))
 ipool=1
 do ik=1,nk
-!do ibnd=1,nwan
         pool(ipool,1)=ik!(/ik,ibnd/)
         ipool=ipool+1
-!enddo
 enddo
-
 
 call mpi_init(ierr)
 call mpi_comm_rank(MPI_COMM_WORLD,my_rank,ierr)
 call mpi_comm_size(MPI_COMM_WORLD,size,ierr)
-
+if (size < 2) call MPI_ABORT(MPI_COMM_WORLD, 1, ierr)
 
 muti_pool=0
 DO
@@ -281,7 +227,6 @@ DO
         IF(muti_pool*(size-1) .gt. npool) EXIT
 ENDDO
 muti_pool=muti_pool-1
-
 
 if ( my_rank.eq.1)  then
 open(unit=103,file='./report',action='write',access='append',status='replace')
@@ -296,8 +241,6 @@ if (.not. my_rank.eq.0)  then
                 ipool=imuti_pool*(size-1)+my_rank
                 if (ipool .gt. npool) cycle
                 ik=pool(ipool,1)
-               ! ibnd=pool(ipool,2)
-                !print*,ik,ibnd
 
                 if ( my_rank.eq.1 .and. mod(imuti_pool,10) .eq.0 )  then
                 open(unit=103,file='./report',action='write',access='append')
@@ -306,20 +249,13 @@ if (.not. my_rank.eq.0)  then
                 close(103)
                 endif
 
-
-
-
                 call int2char(ik,k_char)
                 call int2char(iwan,bnd_char)
-                file_name='../disentangled/WFN/wfn_k'//trim(k_char)//'_w'//trim(bnd_char)//'_vec_dp'
+                file_name=p_nscf_dir//'disentangled/WFN/wfn_k'//trim(k_char)//'_w'//trim(bnd_char)//'_vec_dp'
                 open(unit=101,file=trim(file_name)&
                     &,action='read',access='sequential',form='unformatted',status='old')
-                      !          read(101) nx,ny,nz
                 read(101) read_wfn
-                !ini_wfn(:,:)=read_wfn(:,:)!&
-                                         ! &/(nx*ny*nz)**0.5
                 close(101)
-                
 
                 do is=1,nspin
                         ini_wfn(:,is)=read_wfn(:,is)*phase(ik,:)
@@ -327,14 +263,10 @@ if (.not. my_rank.eq.0)  then
                 ini_wfn(:,:)=exp(-cI*2*pi*sum(R_shift(iwan,:)*k_list(ik,:)))*&
                                         &ini_wfn(:,:)
 
-
-
                 do j=1,(2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1)
-               ! do is=1,2
                 ctmp=exp(cI*2*pi*sum(dir_vec(j,:)*k_list(ik,:)))
                 wan_fun_local(j,:,:)=wan_fun_local(j,:,:)+&
                         &ctmp*ini_wfn(:,:)  !ini_wfn(:,is)
-               ! enddo
                 enddo
         enddo
         call MPI_SEND(wan_fun_local(:,:,:),(2*convert_size_x+1)*(2*convert_size_y+1)*(2*convert_size_z+1)*nx*ny*nz*nspin&
@@ -349,25 +281,18 @@ if (my_rank.eq.0)  then
                 wan_fun(:,:,:)=wan_fun(:,:,:)+wan_fun_local(:,:,:)
         enddo
 
-        wan_fun(:,:,:)=wan_fun(:,:,:)/(nx*ny*nz)**0.5/(nk1*nk2*nk3)
+        wan_fun(:,:,:)=wan_fun(:,:,:)/sqrt(dble(nx)*dble(ny)*dble(nz))/dble(nk)
 
         call int2char(iwan,wan_char)
         open(unit=101,file='./wan_'//trim(wan_char),&
                         &action='write',access='append',status='replace',form='unformatted')
-                !to_write_wan(:,1+nx*ny*z_cut:nx*ny*(nz-z_cut),:)=wan_fun(:,:,:)
-                !write(101) to_write
                 write(101) wan_fun
         close(101)
         print*,sum(abs(wan_fun)**2)
 
-
 endif
 
 call mpi_finalize(ierr)
-
-
-
-
 
 contains
 
@@ -382,8 +307,5 @@ IF ((in_int .LT. 10000) .and. (in_int .GE. 1000) )   WRITE(out_char,'(I4)')in_in
 IF ((in_int .LT. 100000) .and. (in_int .GE. 10000) ) WRITE(out_char,'(I5)')in_int
 
 end subroutine int2char
-
-
-
 
 end program

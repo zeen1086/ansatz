@@ -2,10 +2,10 @@ program wan_interpolat
   use parameter_mod
     use mpi
     implicit none
-    
+
     ! 定义双精度参数
-    integer, parameter :: dp = 8 
-    
+    integer, parameter :: dp = 8
+
     complex(kind=dp), allocatable :: H_wan(:,:,:), H_k(:,:), H_buff(:,:), eig_vec(:,:,:)
     complex(kind=dp), allocatable :: unmk(:,:), mat_tmp(:,:), unmk_Hermit(:,:)
     complex(kind=dp), allocatable :: delHH(:,:,:), D_h(:,:,:)
@@ -13,14 +13,14 @@ program wan_interpolat
     complex(kind=dp), allocatable :: sig_H(:,:,:), sig_AH(:,:,:)
     complex(kind=dp), allocatable :: sig_H_local(:,:,:), sig_AH_local(:,:,:)
     complex(kind=dp), allocatable :: phase0(:,:), phase1(:,:), phase_k(:)
-    
+
     real(kind=dp), allocatable    :: E_list(:), eig_list(:,:), spin_list(:,:), spin_tmp(:)
     real(kind=dp), allocatable    :: k_list(:,:), eigen(:,:), eigen_local(:,:)
     real(kind=dp), allocatable    :: cr_vec(:,:), eig_tmp(:)
     real(kind=dp), allocatable    :: nb(:,:), R_list(:,:), pt_k(:)
-    
+
     integer, allocatable :: ir_vec(:,:), pool(:,:), read3_int(:)
-    
+
     integer :: ik, jk, nk, nkx, nky, nkz, irept, nrept, io
     integer :: i, j, wan_x, wan_y, wan_z, ix, iy, iz
     integer :: ikxy, H_dim, nspin, period_x, period_y, period_z, super_size
@@ -28,11 +28,11 @@ program wan_interpolat
     integer :: nE, iE, i1, i2, i3, i4, f1, f2, f3, f4
     integer :: n_cell, nwan, nline, iline, npt, ipool, muti_pool, imuti_pool
     integer :: ierr, my_rank, size, npool
-    
+
     real(kind=dp) :: a0, a(3,3), Ef, fac, pt_ini_k(3), pt_fin_k(3)
     real(kind=dp) :: length, vec_tmp(3), b(3,3), celldm3, eta
     real(kind=dp) :: t1, t2, t4, E_max, E_min, pi
-    
+
     complex(kind=dp) :: cI, I2pi, ctmp1, ctmp2, ctmp3
     character(len=20) :: irept_char, kz_char
     character(len=200) :: useless_string, nscf_dir, rvr_root, title
@@ -77,7 +77,7 @@ Ef = p_ef
     allocate(E_list(nE))
     allocate(sig_H(2,2,nE), sig_AH(2,2,nE))
     allocate(sig_H_local(2,2,nE), sig_AH_local(2,2,nE))
-    
+
     do iE = 1, nE
         E_list(iE) = E_min + (iE-1)*(E_max-E_min)/nE
     end do
@@ -114,7 +114,7 @@ Ef = p_ef
         irept = irept + 1
     end do
     close(101)
-    
+
     nrept = irept
     allocate(ir_vec(nrept,3), cr_vec(nrept,3))
     allocate(H_wan(H_dim,H_dim,nrept), H_wan_tmp(H_dim,H_dim))
@@ -145,21 +145,21 @@ Ef = p_ef
     read(101,'(A6,I3)') useless_string, nline
     read(101,'(A4,I3)') useless_string, npt
     nk = nline * npt
-    
+
     allocate(pt_k(nk), eig_list(nk,H_dim), spin_list(nk,H_dim))
     allocate(k_list(nk,3), pool(nk,1))
-    
+
     if (my_rank == 0) open(unit=102, file='./path_check.out', access='append')
-    
+
     do iline = 1, nline
         read(101,'(6F12.6)') pt_ini_k, pt_fin_k
         if (my_rank == 0) write(102,'(6F12.6)') pt_ini_k, pt_fin_k
-        
+
         vec_tmp(1) = sum(b(:,1)*(pt_fin_k - pt_ini_k))
         vec_tmp(2) = sum(b(:,2)*(pt_fin_k - pt_ini_k))
         vec_tmp(3) = sum(b(:,3)*(pt_fin_k - pt_ini_k))
         length = sqrt(sum(vec_tmp**2)) / npt
-        
+
         do ik = npt*(iline-1)+1, npt*iline
             k_list(ik,:) = pt_ini_k + (ik-npt*(iline-1))*(pt_fin_k - pt_ini_k)/npt
             pool(ik,1) = ik
@@ -180,7 +180,7 @@ Ef = p_ef
     super_size = period_x * period_y * period_z
     allocate(nb(super_size,3), R_list(super_size,3))
     allocate(phase0(super_size,super_size), phase1(super_size,super_size))
-    
+
     do ix = 0, period_x-1
     do iy = 0, period_y-1
     do iz = 0, period_z-1
@@ -206,7 +206,7 @@ Ef = p_ef
         open(unit=101, file='report', access='append')
         write(101,*) 'start reading'
         close(101)
-        
+
         do irept = 1, nrept
             call int2char(irept, irept_char)
             ! 注意：这里读取双精度数据
@@ -214,7 +214,7 @@ Ef = p_ef
                  access='stream', form='unformatted')
             read(101) H_wan(:,:,irept)
             close(101)
-            
+
             ! 使用 MPI_DOUBLE_COMPLEX
             call MPI_Bcast(H_wan(:,:,irept), H_dim*H_dim, &
                            MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD, ierr)
@@ -232,7 +232,7 @@ Ef = p_ef
             end do
             call MPI_Barrier(MPI_COMM_WORLD, ierr)
         end do
-        
+
         open(unit=101, file='./plt_bnd_'//trim(title), access='append')
         do i_dim = 1, H_dim
             do ik = 1, nk
@@ -256,7 +256,7 @@ Ef = p_ef
             do imuti_pool = 0, muti_pool
                 ipool = imuti_pool*(size-1) + my_rank
                 if (ipool > npool) cycle
-                
+
                 call cpu_time(t1)
                 ikxy = pool(ipool, iz)
                 ik = ikxy
@@ -299,7 +299,7 @@ Ef = p_ef
                 end do
 
                 H_k = cmplx(0.0_dp, 0.0_dp, kind=dp)
-                
+
                 ! 构建 Hamiltonian
                 do i = 1, super_size
                     i3 = 2/nspin*nwan*(i-1) + 1
@@ -316,17 +316,17 @@ Ef = p_ef
                                 ctmp3 = conjg(phase1(j,n2)) * ctmp2
                                 i2 = 2/nspin*nwan*(n2-1) + 1
                                 f2 = 2/nspin*nwan*n2
-                                
+
                                 H_k(i1:f1, i2:f2) = H_k(i1:f1, i2:f2) + &
                                                     ctmp3 * H_wan_tmp(i3:f3, i4:f4)
                             end do
                         end do
                     end do
                 end do
-               
+
                 H_k = H_k / real(super_size, dp)
                 call cpu_time(t2)
-                
+
                 ! 调用对角化
                 call diasym(H_k, eig_tmp, H_dim, unmk)
 
@@ -337,9 +337,9 @@ Ef = p_ef
                                           (-1.0_dp)**(j_dim+1) * abs(unmk(j_dim,i_dim))**2
                     end do
                 end do
-                
+
                 call cpu_time(t4)
-                
+
                 if (my_rank == 1) then
                     open(unit=101, file='report', access='append')
                     write(101,*) 'build', t2-t1, 'diag', t4-t2
@@ -375,24 +375,24 @@ contains
         complex(kind=dp), intent(in) :: a(n,n)
         complex(kind=dp) :: a_tmp(n,n)
         complex(kind=dp), intent(out) :: D(n,n)
-        
+
         integer :: l, inf
         ! LAPACK 工作数组大小需足够
         complex(kind=dp), allocatable :: Lwork(:)
         real(kind=dp), intent(out) :: eig(n)
         real(kind=dp), allocatable :: Rwork(:)
-        
+
         allocate(Lwork(2*n-1))
         allocate(Rwork(3*n-2))
 
         a_tmp = a
         l = 2*n-1
-        
+
         ! 使用双精度 LAPACK 程序 ZHEEV
         call zheev('V', 'U', n, a_tmp, n, eig, Lwork, l, Rwork, inf)
-        
+
         if (inf /= 0) print*, "Error in diagonalization: ", inf
-        
+
         D = a_tmp
         deallocate(Lwork, Rwork)
     end subroutine diasym
